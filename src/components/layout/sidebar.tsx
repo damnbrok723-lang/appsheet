@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -11,12 +9,9 @@ import {
   FolderKanban,
   Calendar,
   Bell,
-  FileBarChart,
   ChevronLeft,
   ChevronRight,
   Settings,
-  LogOut,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,20 +22,11 @@ const menuItems = [
   { name: "Team", href: "/team", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Notifications", href: "/notifications", icon: Bell },
-  { name: "Laporan", href: "/reports", icon: FileBarChart },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  async function handleLogout() {
-    setIsLoggingOut(true);
-    queryClient.clear();
-    await signOut({ callbackUrl: "/login" });
-  }
 
   return (
     <aside className={cn("sticky top-0 z-30 flex h-screen flex-col border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64")}>
@@ -66,10 +52,6 @@ export function Sidebar() {
           <Settings className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Settings</span>}
         </Link>
-        <button type="button" onClick={handleLogout} disabled={isLoggingOut} className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:cursor-wait disabled:opacity-60">
-          {isLoggingOut ? <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> : <LogOut className="h-5 w-5 shrink-0" />}
-          {!collapsed && <span>{isLoggingOut ? "Keluar..." : "Keluar"}</span>}
-        </button>
       </div>
     </aside>
   );
