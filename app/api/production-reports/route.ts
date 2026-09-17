@@ -133,3 +133,11 @@ export async function POST(request: Request) {
     return Response.json({ success: false, message: "Failed to save production report" }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  const session = await getSession();
+  if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  if ((session.user as { role?: string }).role !== "ADMIN") return Response.json({ success: false, message: "Hanya Admin yang dapat menghapus semua laporan" }, { status: 403 });
+  const result = await prisma.productionReport.deleteMany();
+  return Response.json({ success: true, data: { deleted: result.count } });
+}

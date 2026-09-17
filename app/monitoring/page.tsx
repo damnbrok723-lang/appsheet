@@ -40,7 +40,12 @@ export default function MonitoringPage() {
     onError: (error) => toast.error(error.message),
   });
 
-  function submit(event: FormEvent) { event.preventDefault(); saveMutation.mutate(); }
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const missing = [!date && "Tanggal", !shift && "Shift", !operatorCount && "Jumlah Operator", !warehouse && "Gudang", !teamLeader.trim() && "Kepala Regu"].filter(Boolean);
+    if (missing.length) { toast.warning(`Lengkapi dulu: ${missing.join(", ")}`); return; }
+    saveMutation.mutate();
+  }
 
   async function importCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
