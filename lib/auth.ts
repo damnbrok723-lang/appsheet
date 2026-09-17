@@ -10,6 +10,7 @@ const loginSchema = z.object({
 });
 
 export const authConfig: AuthConfig = {
+  trustHost: true,
   providers: [
     Credentials({
       name: "Credentials",
