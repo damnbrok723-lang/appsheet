@@ -1,7 +1,7 @@
 # OfficeHub
 ## Panduan Pemakaian User dan Admin
 
-**Versi:** 2.0  
+**Versi:** 2.0
 **Tanggal:** 17 September 2026
 
 Dokumen ini menjelaskan tujuan aplikasi, fitur yang tersedia, cara pemakaian
