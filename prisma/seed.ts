@@ -225,7 +225,7 @@ async function main() {
   });
   await prisma.productionReport.upsert({
     where: { id: "demo-production-report" },
-    update: { customer: "PT Nusantara", qtyOk: 420, qtyNg: 8 },
+    update: { customer: "PT Nusantara", qtyOk: 420, qtyNg: 8, ncrNumber: "NCR-2609-000", status: "APPROVED" },
     create: {
       id: "demo-production-report",
       userId: manager.id,
@@ -239,6 +239,8 @@ async function main() {
       shift: "PAGI",
       qtyOk: 420,
       qtyNg: 8,
+      ncrNumber: "NCR-2609-000",
+      status: "APPROVED",
       processNotes: "Demo production report",
     },
   });
@@ -280,7 +282,7 @@ async function main() {
       dimensions: index % 2 === 0 ? "100 x 50 x 3 mm" : "80 x 40 x 2 mm",
       pipeTypes: JSON.stringify([index % 3 === 0 ? "BULAT" : "KOTAK"]),
       batchNumber: `B-2609-${String(index + 1).padStart(3, "0")}`,
-      ncrNumber: qtyNg > 10 ? `NCR-2609-${String(index + 1).padStart(3, "0")}` : null,
+      ncrNumber: qtyNg > 0 ? `NCR-2609-${String(index + 1).padStart(3, "0")}` : null,
       operatorTypes: JSON.stringify([index % 2 === 0 ? "INTERNAL" : "BORONGAN"]),
       operatorName: [andi.name, doni.name, rina.name][index % 3],
       shift: shifts[index % shifts.length],
@@ -289,6 +291,7 @@ async function main() {
       ngNotes: qtyNg > 10 ? "Pemeriksaan ulang diperlukan pada permukaan produk." : null,
       processNotes: "Data demo untuk pengujian dashboard dan laporan.",
       photoData: null,
+      status: ["DRAFT", "SUBMITTED", "REVISION", "APPROVED", "REJECTED"][index % 5],
     };
   });
 
