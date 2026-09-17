@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { ToastProvider } from "@/components/providers/toast-provider";
 import { usePathname } from "next/navigation";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -10,19 +11,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
 
   if (isAuthPage) {
-    return <>{children}</>;
+    return <ToastProvider>{children}</ToastProvider>;
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
+    <ToastProvider>
+      <div className="flex h-[100dvh] overflow-hidden bg-background">
+        <div className="hidden h-full min-h-0 shrink-0 md:block"><Sidebar /></div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6">
           {children}
         </main>
         <MobileNav />
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

@@ -9,25 +9,24 @@ import { NotificationsDropdown } from "@/components/notifications/notifications-
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     fetch("/api/auth/session")
       .then((response) => response.ok ? response.json() : null)
       .then((session) => {
-        if (active) setIsAdmin(session?.user?.role === "ADMIN");
+        if (active) setRole(session?.user?.role ?? null);
       })
       .catch(() => {
-        if (active) setIsAdmin(false);
+        if (active) setRole(null);
       });
     return () => { active = false; };
   }, []);
 
-  const mobileLinks = [
+  const sharedLinks = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Tasks", href: "/tasks" },
-    { label: "Team", href: "/team" },
     { label: "Calendar", href: "/calendar" },
     { label: "Monitoring", href: "/monitoring" },
     { label: "Laporan", href: "/reports" },
@@ -35,8 +34,12 @@ export function Header() {
     { label: "Kehadiran", href: "/attendance" },
     { label: "Pengumuman", href: "/announcements" },
     { label: "Notifikasi", href: "/notifications" },
-    ...(isAdmin ? [{ label: "Admin Dashboard", href: "/dashboard/admin" }, { label: "Audit Log", href: "/audit-logs" }] : []),
   ];
+  const mobileLinks = role === "ADMIN"
+    ? [...sharedLinks, { label: "Team", href: "/team" }, { label: "Admin Dashboard", href: "/dashboard/admin" }, { label: "Users", href: "/admin/users" }, { label: "Departments", href: "/admin/departments" }, { label: "Teams", href: "/admin/teams" }, { label: "Audit Log", href: "/audit-logs" }]
+    : role === "MANAGER"
+      ? [...sharedLinks, { label: "Team", href: "/team" }]
+      : sharedLinks;
   return (
     <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
