@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
     const priority = searchParams.get("priority");
     const assignedTo = searchParams.get("assignedTo");
+    const role = (session.user as { role?: string }).role;
 
     const skip = (page - 1) * limit;
 
@@ -32,6 +33,9 @@ export async function GET(req: NextRequest) {
     if (status) where.status = status;
     if (priority) where.priority = priority;
     if (assignedTo) where.assignedToId = assignedTo;
+    if (role !== "ADMIN" && role !== "MANAGER") {
+      where.OR = [{ createdById: session.user.id as string }, { assignedToId: session.user.id as string }];
+    }
 
     const [tasks, total] = await Promise.all([
       prisma.task.findMany({
@@ -70,6 +74,10 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const validated = TaskCreateSchema.parse(body);
+    const role = (session.user as { role?: string }).role;
+    if (validated.assignedTo && !["ADMIN", "MANAGER"].includes(role ?? "")) {
+      return NextResponse.json({ success: false, message: "Only managers and admins can assign tasks" }, { status: 403 });
+    }
 
     const task = await prisma.task.create({
       data: {
