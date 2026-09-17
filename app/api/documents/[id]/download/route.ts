@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
+import { downloadStorageFile } from "@/lib/storage";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -25,13 +26,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Document download initiated",
-      data: {
-        filePath: document.filePath,
-        fileName: document.name,
-        mimeType: document.mimeType,
+    const fileResponse = await downloadStorageFile(document.filePath);
+    return new NextResponse(fileResponse.body, {
+      headers: {
+        "Content-Type": document.mimeType,
+        "Content-Length": String(document.fileSize),
+        "Content-Disposition": `attachment; filename="${document.name.replace(/"/g, "")}"`,
       },
     });
   } catch (error) {

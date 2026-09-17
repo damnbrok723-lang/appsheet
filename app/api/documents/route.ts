@@ -2,12 +2,9 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/permissions";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+import { uploadStorageFile } from "@/lib/storage";
 
-const createDocumentSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  teamId: z.string().optional(),
-});
+const createDocumentSchema = z.object({ name: z.string().min(1), description: z.string().optional(), teamId: z.string().optional() });
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,12 +46,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const validated = createDocumentSchema.parse(body);
-
-    const filePath = `/uploads/documents/${Date.now()}-${validated.name}`;
-    const mimeType = validated.name.split(".").pop() ? `application/${validated.name.split(".").pop()}` : "application/octet-stream";
-    const fileSize = 0;
+    const formData = await req.formData();
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return NextResponse.json({ success: false, message: "File is required" }, { status: 400 });
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      return NextResponse.json({ success: false, message: "Maximum file size is 25 MB" }, { status: 400 });
+    }
+    const validated = createDocumentSchema.parse({
+      name: String(formData.get("name") || file.name),
+      description: String(formData.get("description") || "") || undefined,
+      teamId: String(formData.get("teamId") || "") || undefined,
+    });
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${session.user.id}/${Date.now()}-${safeName}`;
+    await uploadStorageFile(filePath, file);
+    const mimeType = file.type || "application/octet-stream";
+    const fileSize = file.size;
 
     const document = await prisma.document.create({
       data: {
