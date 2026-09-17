@@ -11,7 +11,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 type TaskComment = { id: string; comment: string; createdAt: string; user?: { name?: string } };
-type TaskAttachment = { id: string; fileName: string; fileSize: number; createdAt: string; user?: { name?: string } };
+type TaskAttachment = { id: string; fileName: string; fileSize: number; mimeType: string; createdAt: string; user?: { name?: string } };
 type TaskDetail = { id: string; title: string; description?: string; priority: string; status: string; dueDate?: string; createdBy: { name: string }; assignedTo?: { name: string }; comments: TaskComment[]; attachments: TaskAttachment[] };
 
 async function fetchTask(id: string) {
@@ -30,10 +30,11 @@ async function updateTask(id: string, action: string) {
 }
 
 export default function TaskDetailPage({ params }: { params: { id: string } }) {
-  const taskQuery = useQuery({ queryKey: ["task", params.id], queryFn: () => fetchTask(params.id), staleTime: 5 * 60 * 1000 });
+  const taskQuery = useQuery({ queryKey: ["task", params.id], queryFn: () => fetchTask(params.id), staleTime: 0, refetchInterval: 30_000 });
   const queryClient = useQueryClient();
   const [comment, setComment] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [preview, setPreview] = useState<{ name: string; url: string } | null>(null);
   const actionMutation = useMutation({
     mutationFn: (action: string) => updateTask(params.id, action),
     onSuccess: () => { toast.success("Task updated"); queryClient.invalidateQueries({ queryKey: ["task", params.id] }); },
@@ -71,6 +72,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
   }
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/tasks"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
@@ -100,7 +102,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><Paperclip className="h-5 w-5" /> Lampiran Task</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-2">{task.attachments?.map((file) => <a key={file.id} href={`/api/tasks/${task.id}/attachments/${file.id}`} className="flex items-center justify-between rounded-md border p-3 text-sm hover:bg-accent"><span>{file.fileName}<span className="ml-2 text-xs text-muted-foreground">{(file.fileSize / 1024).toFixed(1)} KB</span></span><span className="text-primary">Download</span></a>)}</div>
+              <div className="space-y-2">{task.attachments?.length ? task.attachments.map((file) => { const url = `/api/tasks/${task.id}/attachments/${file.id}`; const isImage = file.mimeType.startsWith("image/"); return <div key={file.id} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"><span className="min-w-0 truncate">{file.fileName}<span className="ml-2 text-xs text-muted-foreground">{(file.fileSize / 1024).toFixed(1)} KB</span></span><div className="flex shrink-0 gap-2">{isImage && <Button type="button" variant="outline" size="sm" onClick={() => setPreview({ name: file.fileName, url })}>Preview</Button>}<a href={url} className="rounded-md px-3 py-2 text-primary hover:bg-accent">Download</a></div></div>; }) : <p className="text-sm text-muted-foreground">Belum ada lampiran.</p>}</div>
               <div className="flex flex-wrap items-center gap-2"><input type="file" onChange={(event) => setAttachment(event.target.files?.[0] ?? null)} /><Button type="button" onClick={() => attachmentMutation.mutate()} disabled={!attachment || attachmentMutation.isPending}>{attachmentMutation.isPending ? "Uploading..." : "Upload ke task"}</Button></div>
             </CardContent>
           </Card>
@@ -136,5 +138,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
+    {preview && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" onClick={() => setPreview(null)}><div className="relative max-h-full max-w-5xl" onClick={(event) => event.stopPropagation()}><img src={preview.url} alt={preview.name} className="max-h-[85vh] max-w-full rounded-lg object-contain" /><Button type="button" variant="secondary" className="absolute right-2 top-2" onClick={() => setPreview(null)}>Tutup</Button></div></div>}
+    </>
   );
 }
