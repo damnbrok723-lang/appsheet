@@ -27,7 +27,7 @@ async function fetchDocuments() {
 }
 
 export default function DocumentsPage() {
-  const query = useQuery({ queryKey: ["documents"], queryFn: fetchDocuments, staleTime: 5 * 60 * 1000 });
+  const query = useQuery({ queryKey: ["documents"], queryFn: fetchDocuments, staleTime: 0, refetchInterval: 30_000 });
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);

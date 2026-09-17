@@ -15,7 +15,7 @@ async function fetchNotifications() {
 }
 
 export default function NotificationsPage() {
-  const query = useQuery({ queryKey: ["notifications"], queryFn: fetchNotifications, staleTime: 5 * 60 * 1000 });
+  const query = useQuery({ queryKey: ["notifications"], queryFn: fetchNotifications, staleTime: 0, refetchInterval: 30_000 });
   const queryClient = useQueryClient();
   const markAllRead = useMutation({ mutationFn: async () => { const response = await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "read-all" }) }); if (!response.ok) throw new Error("Gagal menandai notifikasi"); }, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["notifications"] }); } });
   const markRead = useMutation({ mutationFn: async (id: string) => { const response = await fetch(`/api/notifications/${id}`, { method: "PATCH" }); if (!response.ok) throw new Error("Gagal menandai notifikasi"); }, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }) });

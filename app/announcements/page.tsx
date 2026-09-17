@@ -19,7 +19,7 @@ async function fetchAnnouncements() {
 }
 
 export default function AnnouncementsPage() {
-  const query = useQuery({ queryKey: ["announcements"], queryFn: fetchAnnouncements, staleTime: 5 * 60 * 1000 });
+  const query = useQuery({ queryKey: ["announcements"], queryFn: fetchAnnouncements, staleTime: 0, refetchInterval: 30_000 });
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");

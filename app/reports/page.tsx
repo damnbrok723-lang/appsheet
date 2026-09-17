@@ -21,7 +21,7 @@ async function fetchReports() {
 
 export default function ReportsPage() {
   const queryClient = useQueryClient();
-  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports });
+  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0, refetchInterval: 30_000 });
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
   const currentUser = sessionQuery.data?.user as { id?: string; role?: string } | undefined;
