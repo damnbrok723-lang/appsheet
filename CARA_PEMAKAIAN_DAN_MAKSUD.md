@@ -1,7 +1,7 @@
 # OfficeHub
 ## Panduan Pemakaian User dan Admin
 
-**Versi:** 2.0
+**Versi:** 2.1
 **Tanggal:** 17 September 2026
 
 Dokumen ini menjelaskan tujuan aplikasi, fitur yang tersedia, cara pemakaian
@@ -25,46 +25,115 @@ Monitoring dan Laporan adalah dua alur berbeda:
 
 ---
 
-## 2. Ringkasan Fitur
+## 2. Ringkasan Fitur dan Menu
 
-| Fitur | User | Admin/Manager | Keterangan |
-|---|---:|---:|---|
-| Login, register, logout | Ya | Ya | Session aman melalui Auth.js |
-| Dashboard dan grafik monitoring | Lihat | Lihat | Grafik berasal dari input manual dan CSV |
-| Monitoring manual | Tambah dan lihat | Tambah, lihat, import CSV | Kolom: tanggal, shift, operator, gudang |
-| Laporan produksi | Buat, draft, kirim | Review, approve, revisi, reject | Foto dapat diambil dari kamera HP |
-| Tasks | Lihat, kerjakan, komentar | Buat, assign, review | Status task memiliki alur kerja |
-| Lampiran task | Upload dan download | Upload dan download | File disimpan di Supabase Storage |
-| Dokumen | Upload dan download sesuai akses | Kelola | Batas file 25 MB |
-| Kehadiran | Check in/out | Lihat | Riwayat tersimpan di database |
-| Notifikasi | Baca dan tandai terbaca | Baca dan tandai terbaca | Mark all read tersedia |
-| Export laporan | CSV/Excel-compatible dan PDF | CSV/Excel-compatible dan PDF | PDF melalui print browser |
-| Audit Log | - | Lihat | Hanya Admin |
-| Admin Users, Teams, Departments | - | Kelola | Beberapa CRUD lanjutan dapat dikembangkan |
+| Menu/Fitur | Employee/User | Manager | Admin |
+|---|---|---|---|
+| Login, register, logout | Login/logout | Login/logout | Login/logout |
+| Dashboard | Dashboard operasional dan grafik | Dashboard operasional dan grafik | Dashboard operasional dan grafik |
+| Admin Dashboard | Tidak dapat akses | Tidak dapat akses | Statistik organisasi, user, department, team |
+| Monitoring | Tambah, lihat, import CSV | Tambah, lihat, import CSV | Tambah, lihat, import CSV |
+| Laporan Produksi | Buat, simpan Draft, kirim, kirim ulang setelah Revisi | Buat dan review | Buat dan review |
+| Review laporan | Tidak bisa Approve/Revisi/Tolak | Bisa Approve/Revisi/Tolak | Bisa Approve/Revisi/Tolak |
+| Tasks | Lihat task yang berhak diakses, komentar, kerjakan | Kelola/review sesuai hak akses | Kelola/review sesuai hak akses |
+| Lampiran task | Upload/download | Upload/download | Upload/download |
+| Dokumen | Upload/download sesuai permission | Upload/download sesuai permission | Upload/download |
+| Kehadiran | Check In/Check Out dan riwayat sendiri | Check In/Check Out dan lihat riwayat | Check In/Check Out dan lihat riwayat |
+| Notifikasi | Baca dan tandai terbaca | Baca dan tandai terbaca | Baca dan tandai terbaca |
+| Pengumuman | Baca | Baca | Buat, ubah, hapus, dan targetkan |
+| Export laporan | CSV/Excel-compatible dan Print PDF | CSV/Excel-compatible dan Print PDF | CSV/Excel-compatible dan Print PDF |
+| Audit Log | Tidak berwenang melihat data | Tidak berwenang melihat data | Lihat aktivitas seluruh sistem |
 
----
-
-## 3. Akses dan Role
-
-### User/Employee
-
-User dapat melihat Dashboard, membuat Monitoring, membuat Laporan Produksi,
-mengerjakan task yang ditugaskan, mengunggah lampiran, melakukan kehadiran,
-dan membaca notifikasi.
-
-### Manager
-
-Manager memiliki kemampuan User serta dapat meninjau laporan atau task sesuai
-hak aksesnya, termasuk approve, meminta revisi, atau menolak.
-
-### Admin
-
-Admin dapat mengelola User, Department, Team, Announcement, melihat Audit Log,
-serta melakukan fungsi review dan administrasi lainnya.
+`Audit Log` dapat terlihat pada beberapa tampilan navigasi, tetapi API tetap
+menolak Employee dan Manager. Hanya Admin yang dapat membaca datanya.
 
 ---
 
-## 4. Cara Login dan Logout
+## 3. Akses Per Akun
+
+### 3.1 Employee/User
+
+User dapat:
+
+- Login, logout, dan membuka Dashboard.
+- Menginput Monitoring manual.
+- Import Monitoring melalui CSV UTF-8.
+- Melihat grafik Monitoring.
+- Membuat Laporan Produksi berstatus `DRAFT`.
+- Mengirim laporan menjadi `SUBMITTED`.
+- Mengirim ulang laporan berstatus `REVISION`.
+- Melihat status laporan miliknya.
+- Melihat dan mengerjakan task yang diberikan.
+- Mengubah status task sesuai action yang tersedia.
+- Menulis komentar task.
+- Upload dan download lampiran task.
+- Upload/download dokumen sesuai permission.
+- Check In dan Check Out.
+- Membaca notifikasi dan pengumuman.
+- Export laporan yang dapat dilihat.
+
+User tidak dapat:
+
+- Approve, Revisi, atau Tolak laporan.
+- Membaca Audit Log.
+- Membuka Admin Dashboard.
+- Mengelola User, Department, atau Team.
+
+### 3.2 Manager
+
+Manager memiliki kemampuan User, ditambah:
+
+- Melihat laporan yang perlu direview.
+- Mengubah `SUBMITTED` menjadi `APPROVED`, `REVISION`, atau `REJECTED`.
+- Review task sesuai hak akses.
+- Membantu pengelolaan Team melalui endpoint yang diizinkan.
+
+Manager tidak dapat:
+
+- Mengelola User.
+- Membuka Audit Log.
+- Membuka Admin Dashboard.
+
+### 3.3 Admin
+
+Admin memiliki seluruh kemampuan Manager, ditambah:
+
+- Membuka Admin Dashboard.
+- Melihat statistik total User, Department, Team, Task, dan Attendance.
+- Membuat, mengubah, dan menghapus User.
+- Membuat Department.
+- Membuat, mengubah, dan menghapus Team sesuai data Department.
+- Membuat, mengubah, dan menghapus Announcement.
+- Melihat Audit Log.
+- Review dan mengubah status seluruh laporan yang terlihat.
+
+---
+
+## 4. Matriks CRUD
+
+| Data | Create | Read | Update | Delete | Pemilik Akses |
+|---|---|---|---|---|---|
+| User | Ya | Ya | Ya | Ya | Admin |
+| Department | Ya | Ya | Terbatas sesuai endpoint | Terbatas sesuai endpoint | Admin/endpoint admin |
+| Team | Ya | Ya | Ya | Ya | Admin/Manager |
+| Announcement | Ya | Ya | Ya | Ya | Admin |
+| Monitoring | Ya | Ya | Belum tersedia di UI | Belum tersedia di UI | User, Manager, Admin |
+| Production Report | Ya | Ya | Form edit penuh belum tersedia | Belum tersedia di UI | Pemilik laporan dan reviewer |
+| Status Report | Submit/Resubmit | Ya | Approve/Revisi/Tolak | Tidak | Pemilik, Manager, Admin |
+| Task | Ya sesuai UI | Ya | Status/action | Terbatas | User/Manager/Admin sesuai hak |
+| Task Comment | Ya | Ya | Belum tersedia | Belum tersedia | User yang berwenang |
+| Task Attachment | Ya | Ya/download | Tidak | Ya melalui endpoint | User yang berwenang |
+| Document | Ya | Ya/download | Ada di endpoint | Ada di endpoint | Permission/Admin |
+| Attendance | Check In | Ya | Check Out | Tidak | Pemilik; Manager/Admin dapat melihat |
+| Notification | Dibuat sistem | Ya | Mark read | Tidak | Pemilik notifikasi |
+| Audit Log | Dibuat sistem | Ya | Tidak | Tidak | Admin |
+
+Label “belum tersedia di UI” berarti endpoint/database dapat menyimpan data,
+tetapi tombol/form frontend untuk aksi tersebut belum disediakan.
+
+---
+
+## 5. Cara Login dan Logout
 
 1. Buka URL aplikasi dan pilih **Login**.
 2. Isi email serta kata sandi.
@@ -85,7 +154,7 @@ secret melalui chat, issue, atau repository.
 
 ---
 
-## 5. Dashboard dan Monitoring
+## 6. Dashboard dan Monitoring
 
 ### 5.1 Dashboard
 
@@ -131,7 +200,7 @@ langsung. Untuk file Excel asli, simpan dahulu sebagai CSV UTF-8.
 
 ---
 
-## 6. Laporan Produksi
+## 7. Laporan Produksi
 
 ### 6.1 Membuat Laporan
 
@@ -184,7 +253,7 @@ review. Jika dikembalikan, User memperbaiki laporan dan mengirim ulang.
 
 ---
 
-## 7. Tasks dan Lampiran
+## 8. Tasks dan Lampiran
 
 ### 7.1 Alur Task
 
@@ -215,7 +284,7 @@ dengan nilai `SUPABASE_STORAGE_BUCKET` dan sebaiknya bersifat Private.
 
 ---
 
-## 8. Kehadiran, Notifikasi, dan Pengumuman
+## 9. Kehadiran, Notifikasi, dan Pengumuman
 
 ### Kehadiran
 
@@ -236,7 +305,7 @@ yang ditujukan kepada mereka atau organisasi.
 
 ---
 
-## 9. Admin
+## 10. Admin
 
 Admin membuka menu Admin untuk:
 
@@ -253,7 +322,7 @@ upload/download dokumen, kehadiran, dan review laporan.
 
 ---
 
-## 10. Export dan PDF
+## 11. Export dan PDF
 
 Pada menu Laporan:
 
@@ -271,7 +340,7 @@ Untuk PDF panduan ini:
 
 ---
 
-## 11. Supabase dan Vercel
+## 12. Supabase dan Vercel
 
 ### 11.1 Environment Variable Wajib
 
@@ -334,7 +403,7 @@ pantau Usage dan pindahkan foto ke Storage bila jumlah laporan bertambah.
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### Login kembali ke halaman login
 
@@ -360,7 +429,7 @@ pantau Usage dan pindahkan foto ke Storage bila jumlah laporan bertambah.
 
 ---
 
-## 13. Checklist Sebelum Dipakai User
+## 14. Checklist Sebelum Dipakai User
 
 - [ ] Deployment Vercel berstatus Ready.
 - [ ] Login dan logout berhasil.
