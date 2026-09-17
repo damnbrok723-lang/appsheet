@@ -7,6 +7,9 @@ export async function middleware(request: NextRequest) {
   const publicPaths = ["/login", "/"];
   const isPublic = publicPaths.some((path) => pathname === path || pathname.startsWith(path + "/"));
 
+  // Auth.js must handle its own sign-in, callback, CSRF, and error endpoints.
+  if (pathname.startsWith("/api/auth")) return NextResponse.next();
+
   if (isPublic) return NextResponse.next();
 
   const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
