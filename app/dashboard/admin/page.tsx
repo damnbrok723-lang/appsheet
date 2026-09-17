@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Users, FolderKanban, Clock, BarChart3, FileText } from "lucide-react";
 
+type AdminUser = { id: string; name: string; email: string; role: string; status: string };
+type AdminDepartment = { id: string; name: string; description?: string | null };
+type AdminTeam = { id: string; name: string; departmentId: string };
+
 async function fetchAdminStats() {
   const [users, departments, teams, tasks, attendance] = await Promise.all([
     fetch("/api/users?limit=1"), fetch("/api/departments"), fetch("/api/teams"), fetch("/api/tasks?limit=1"), fetch("/api/attendance?limit=1"),
@@ -20,19 +24,19 @@ async function fetchAdminStats() {
 async function fetchUsers() {
   const response = await fetch("/api/users?limit=5");
   if (!response.ok) throw new Error("Gagal memuat user");
-  return (await response.json()).data.users;
+  return (await response.json()).data.users as AdminUser[];
 }
 
 async function fetchDepartments() {
   const response = await fetch("/api/departments");
   if (!response.ok) throw new Error("Gagal memuat departemen");
-  return (await response.json()).data;
+  return (await response.json()).data as AdminDepartment[];
 }
 
 async function fetchTeams() {
   const response = await fetch("/api/teams");
   if (!response.ok) throw new Error("Gagal memuat tim");
-  return (await response.json()).data;
+  return (await response.json()).data as AdminTeam[];
 }
 
 export default function AdminDashboardPage() {
