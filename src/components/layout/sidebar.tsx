@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -40,6 +40,24 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/session")
+      .then((response) => response.ok ? response.json() : null)
+      .then((session) => {
+        if (active) setIsAdmin(session?.user?.role === "ADMIN");
+      })
+      .catch(() => {
+        if (active) setIsAdmin(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const visibleMenuItems = isAdmin
+    ? [...menuItems, { name: "Admin Dashboard", href: "/dashboard/admin", icon: ShieldCheck }]
+    : menuItems;
 
   return (
     <aside className={cn("flex h-full min-h-0 flex-col border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64")}>
@@ -50,7 +68,7 @@ export function Sidebar() {
         </Button>
       </div>
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
-        {menuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
             <Link key={item.name} href={item.href} prefetch onMouseEnter={() => router.prefetch(item.href)} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground", isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>

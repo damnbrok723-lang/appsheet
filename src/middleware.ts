@@ -17,7 +17,7 @@ export default auth((request) => {
   const session = request.auth;
   if (session?.user) {
     const role = (session.user as { role?: string }).role;
-    if (pathname.startsWith("/admin") && role !== "ADMIN") {
+    if ((pathname.startsWith("/admin") || pathname.startsWith("/dashboard/admin")) && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();

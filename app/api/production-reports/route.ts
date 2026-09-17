@@ -24,7 +24,12 @@ export async function GET() {
   const session = await getSession();
   if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
-  const reports = await prisma.productionReport.findMany({ orderBy: { reportDate: "desc" }, take: 100 });
+  const role = (session.user as { role?: string }).role;
+  const reports = await prisma.productionReport.findMany({
+    where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string },
+    orderBy: { reportDate: "desc" },
+    take: 100,
+  });
   return Response.json({
     success: true,
     data: { reports: reports.map((report: ProductionReport) => ({ ...report, pipeTypes: JSON.parse(report.pipeTypes), operatorTypes: JSON.parse(report.operatorTypes) })) },
@@ -37,6 +42,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
     const data = reportSchema.parse(await request.json());
+      if (data.qtyNg > 0 && !data.ncrNumber?.trim()) {
+        return Response.json({ success: false, message: "No NCR wajib diisi jika Qty NG lebih dari 0" }, { status: 400 });
+      }
     const report = await prisma.productionReport.create({
       data: {
         ...data,
