@@ -8,6 +8,7 @@ import { TaskCard } from "@/components/tasks/task-card";
 import type { Task } from "@/components/tasks/task-card";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { TrendingUp, Users, FolderKanban, Clock } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 async function fetchDashboardStats() {
   const [tasksResponse, membersResponse, eventsResponse] = await Promise.all([
@@ -38,10 +39,18 @@ async function fetchEvents() {
   return (await response.json()).data.events;
 }
 
+async function fetchMonitoring() {
+  const response = await fetch("/api/monitoring");
+  if (!response.ok) throw new Error("Unable to load monitoring");
+  return (await response.json()).data as { entries: { id: string; date: string; operatorCount: number; shift: string; warehouse: string }[] };
+}
+
 export default function DashboardPage() {
   const statsQuery = useQuery({ queryKey: ["dashboard-stats"], queryFn: fetchDashboardStats, staleTime: 5 * 60 * 1000 });
   const tasksQuery = useQuery({ queryKey: ["recent-tasks"], queryFn: fetchRecentTasks, staleTime: 5 * 60 * 1000 });
   const eventsQuery = useQuery({ queryKey: ["calendar-events"], queryFn: fetchEvents, staleTime: 5 * 60 * 1000 });
+  const monitoringQuery = useQuery({ queryKey: ["monitoring"], queryFn: fetchMonitoring, staleTime: 60 * 1000 });
+  const monitoringChart = (monitoringQuery.data?.entries ?? []).map((entry) => ({ date: new Date(entry.date).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }), operatorCount: entry.operatorCount, shift: entry.shift, warehouse: entry.warehouse }));
 
   return (
     <div className="space-y-6">
@@ -78,6 +87,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Monitoring Operator</h2><a className="text-sm text-primary hover:underline" href="/monitoring">Lihat detail</a></div></CardHeader>
+        <CardContent>
+          {monitoringQuery.isLoading ? <Skeleton className="h-64" /> : monitoringQuery.isError ? <p className="py-8 text-center text-sm text-destructive">Monitoring gagal dimuat.</p> : monitoringChart.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Belum ada data monitoring.</p> : <div className="h-64 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={monitoringChart}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="operatorCount" name="Operator" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>}
+        </CardContent>
+      </Card>
     </div>
   );
 }

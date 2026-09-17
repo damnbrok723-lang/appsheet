@@ -53,6 +53,8 @@ export default function ReportsPage() {
     setForm((current) => ({ ...current, photoData: "" }));
   }
 
+  const qtyNg = Number(form.qtyNg) || 0;
+
   async function changeStatus(id: string, status: string) {
     const response = await fetch(`/api/production-reports/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     const result = await response.json();
@@ -83,12 +85,13 @@ export default function ReportsPage() {
       <label className="space-y-2 text-sm font-medium">Dimensi<Input required placeholder="Contoh: 100 x 50 x 3 mm" {...field("dimensions")} /></label>
       <fieldset className="space-y-2 text-sm"><legend className="font-medium">Jenis Pipa</legend><div className="flex gap-5 pt-2">{[["KOTAK", "Kotak"], ["BULAT", "Bulat"]].map(([value, label]) => <label key={value} className="flex items-center gap-2"><input type="checkbox" checked={form.pipeTypes.includes(value)} onChange={() => toggleValue("pipeTypes", value)} />{label}</label>)}</div></fieldset>
       <label className="space-y-2 text-sm font-medium">Batch<Input required {...field("batchNumber")} /></label>
-      <label className="space-y-2 text-sm font-medium">No NCR<Input {...field("ncrNumber")} /></label>
+      <label className="space-y-2 text-sm font-medium">No NCR<Input required={qtyNg > 0} {...field("ncrNumber")} />{qtyNg > 0 && <span className="text-xs text-destructive">Wajib diisi jika Qty NG lebih dari 0.</span>}</label>
       <fieldset className="space-y-2 text-sm"><legend className="font-medium">Operator</legend><div className="flex gap-5 pt-2">{[["BORONGAN", "Borongan"], ["INTERNAL", "Internal"]].map(([value, label]) => <label key={value} className="flex items-center gap-2"><input type="checkbox" checked={form.operatorTypes.includes(value)} onChange={() => toggleValue("operatorTypes", value)} />{label}</label>)}</div></fieldset>
       <label className="space-y-2 text-sm font-medium">Nama Operator<Input required {...field("operatorName")} /></label>
       <label className="space-y-2 text-sm font-medium">Shift<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.shift} onChange={(event) => setForm({ ...form, shift: event.target.value })}><option value="PAGI">Pagi</option><option value="SIANG">Siang</option><option value="MALAM">Malam</option></select></label>
       <label className="space-y-2 text-sm font-medium">Qty OK<Input type="number" min="0" required {...field("qtyOk")} /></label>
       <label className="space-y-2 text-sm font-medium">Qty NG<Input type="number" min="0" required {...field("qtyNg")} /></label>
+      <div className="rounded-md border bg-muted/40 p-3 text-sm font-medium">Total Qty: <span className="text-lg">{(Number(form.qtyOk) || 0) + qtyNg}</span></div>
       <label className="space-y-2 text-sm font-medium md:col-span-2">Keterangan NG<Textarea {...field("ngNotes")} /></label>
       <label className="space-y-2 text-sm font-medium md:col-span-2">Keterangan Proses<Textarea {...field("processNotes")} /></label>
       <div className="space-y-3 rounded-md border border-dashed p-4 text-sm font-medium md:col-span-2"><label className="flex cursor-pointer items-center gap-3"><Camera className="h-5 w-5" />Ambil foto atau pilih dari galeri<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handlePhoto} />{form.photoData && <span className="text-xs text-muted-foreground">Foto siap disimpan</span>}</label>{form.photoData && <div className="flex items-start gap-3"><img src={form.photoData} alt="Pratinjau laporan" className="h-24 w-24 rounded-md object-cover" /><Button type="button" variant="outline" size="sm" onClick={clearPhoto}>Ambil ulang</Button></div>}</div>
