@@ -9,26 +9,30 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, Users, FolderKanban, Clock, BarChart3, FileText } from "lucide-react";
 
 async function fetchAdminStats() {
-  return { totalUsers: 48, totalDepartments: 6, totalTeams: 12, totalTasks: 156, totalAttendance: 98 };
+  const [users, departments, teams, tasks, attendance] = await Promise.all([
+    fetch("/api/users?limit=1"), fetch("/api/departments"), fetch("/api/teams"), fetch("/api/tasks?limit=1"), fetch("/api/attendance?limit=1"),
+  ]);
+  if ([users, departments, teams, tasks, attendance].some((response) => !response.ok)) throw new Error("Gagal memuat statistik admin");
+  const [userData, departmentData, teamData, taskData, attendanceData] = await Promise.all([users.json(), departments.json(), teams.json(), tasks.json(), attendance.json()]);
+  return { totalUsers: userData.data.total, totalDepartments: departmentData.data.length, totalTeams: teamData.data.length, totalTasks: taskData.data.total, totalAttendance: attendanceData.data.total };
 }
 
 async function fetchUsers() {
-  return [
-    { id: "1", name: "John Doe", email: "john@example.com", role: "ADMIN", status: "ACTIVE" },
-    { id: "2", name: "Jane Smith", email: "jane@example.com", role: "MANAGER", status: "ACTIVE" },
-    { id: "3", name: "Bob Wilson", email: "bob@example.com", role: "EMPLOYEE", status: "ON_LEAVE" },
-  ];
+  const response = await fetch("/api/users?limit=5");
+  if (!response.ok) throw new Error("Gagal memuat user");
+  return (await response.json()).data.users;
 }
 
 async function fetchDepartments() {
-  return [
-    { id: "1", name: "Engineering", description: "Software development" },
-    { id: "2", name: "Marketing", description: "Marketing and sales" },
-  ];
+  const response = await fetch("/api/departments");
+  if (!response.ok) throw new Error("Gagal memuat departemen");
+  return (await response.json()).data;
 }
 
 async function fetchTeams() {
-  return [{ id: "1", name: "Frontend", departmentId: "1" }, { id: "2", name: "Backend", departmentId: "1" }];
+  const response = await fetch("/api/teams");
+  if (!response.ok) throw new Error("Gagal memuat tim");
+  return (await response.json()).data;
 }
 
 export default function AdminDashboardPage() {
