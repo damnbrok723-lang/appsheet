@@ -7,16 +7,31 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
+type AttendanceRecord = { id: string; date: string; checkIn?: string | null; checkOut?: string | null };
+
 async function fetchAttendance() {
-  return { today: { checkIn: null, checkOut: null, date: new Date().toISOString() }, history: [{ date: "2024-12-01", checkIn: "09:00", checkOut: "17:30" }] };
+  const response = await fetch("/api/attendance?limit=31");
+  if (!response.ok) throw new Error("Gagal memuat kehadiran");
+  const records = (await response.json()).data.attendanceRecords as AttendanceRecord[];
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const today = records.find((record: { date: string }) => record.date.slice(0, 10) === todayKey);
+  return { today: { checkIn: today?.checkIn ?? null, checkOut: today?.checkOut ?? null, date: todayKey }, history: records };
 }
 
 export default function AttendancePage() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["attendance"], queryFn: fetchAttendance, staleTime: 5 * 60 * 1000 });
 
-  const checkInMutation = useMutation({ mutationFn: async () => { toast.success("Checked in!"); }, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance"] }) });
-  const checkOutMutation = useMutation({ mutationFn: async () => { toast.success("Checked out!"); }, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance"] }) });
+  const attendanceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal mencatat kehadiran");
+      return result;
+    },
+    onSuccess: (result) => { toast.success(result.message); queryClient.invalidateQueries({ queryKey: ["attendance"] }); },
+    onError: (error) => toast.error(error.message),
+  });
 
   return (
     <div className="space-y-6">
@@ -28,10 +43,10 @@ export default function AttendancePage() {
           {query.data?.today.checkIn ? (
             <div><Badge variant="success" className="mb-2">Checked In</Badge><p className="text-muted-foreground">{query.data.today.checkIn}</p></div>
           ) : (
-            <Button onClick={() => checkInMutation.mutate()}>Check In</Button>
+            <Button onClick={() => attendanceMutation.mutate()} disabled={attendanceMutation.isPending}>{attendanceMutation.isPending ? "Menyimpan..." : "Check In"}</Button>
           )}
           {query.data?.today.checkIn && !query.data.today.checkOut && (
-            <Button variant="destructive" className="mt-2" onClick={() => checkOutMutation.mutate()}>Check Out</Button>
+            <Button variant="destructive" className="mt-2" onClick={() => attendanceMutation.mutate()} disabled={attendanceMutation.isPending}>Check Out</Button>
           )}
         </Card>
         <Card className="p-6">

@@ -16,7 +16,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
-    const userId = searchParams.get("userId") || undefined;
+    const requestedUserId = searchParams.get("userId") || undefined;
+    const role = (session.user as { role?: string }).role;
+    const userId = ["ADMIN", "MANAGER"].includes(role ?? "") ? requestedUserId : session.user.id as string;
     const date = searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined;
 
     const skip = (page - 1) * limit;
