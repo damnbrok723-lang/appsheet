@@ -303,6 +303,7 @@ model MonitoringEntry {
   user User @relation(fields: [userId], references: [id])
 
   @@index([date])
+  @@index([userId, date])
   @@map("monitoring_entries")
 }
 
@@ -330,6 +331,7 @@ model ProductionReport {
   user User @relation(fields: [userId], references: [id])
 
   @@index([reportDate])
+  @@index([userId, reportDate])
   @@index([customer])
   @@map("production_reports")
 }
