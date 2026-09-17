@@ -6,10 +6,15 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
+
+  useEffect(() => {
+    document.querySelector("main")?.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
 
   if (isAuthPage) {
     return <ToastProvider>{children}</ToastProvider>;
