@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -20,24 +20,25 @@ const teamSchema = z.object({ name: z.string().min(2), departmentId: z.string().
 type TeamFormData = z.infer<typeof teamSchema>;
 
 async function fetchTeams() {
-  return [
-    { id: "1", name: "Frontend", departmentId: "1" },
-    { id: "2", name: "Backend", departmentId: "1" },
-    { id: "3", name: "Design", departmentId: "2" },
-  ];
+  const response = await fetch("/api/teams");
+  if (!response.ok) throw new Error("Gagal memuat tim");
+  return (await response.json()).data as { id: string; name: string; departmentId: string }[];
 }
 
 export default function TeamsPage() {
   const query = useQuery({ queryKey: ["teams"], queryFn: fetchTeams, staleTime: 5 * 60 * 1000 });
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
   const form = useForm<TeamFormData>({ resolver: zodResolver(teamSchema), defaultValues: { name: "", departmentId: "" } });
 
-  const onSubmit = (data: TeamFormData) => {
-    toast.success("Team created!");
-    setOpen(false);
-    form.reset();
-  };
+  const createMutation = useMutation({
+    mutationFn: async (data: TeamFormData) => { const response = await fetch("/api/teams", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }); const result = await response.json(); if (!response.ok) throw new Error(result.message || "Gagal membuat tim"); },
+    onSuccess: () => { toast.success("Tim dibuat"); setOpen(false); form.reset(); queryClient.invalidateQueries({ queryKey: ["teams"] }); },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const onSubmit = (data: TeamFormData) => createMutation.mutate(data);
 
   return (
     <div className="space-y-6">
@@ -93,7 +94,7 @@ export default function TeamsPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit">Create</Button>
+                <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? "Menyimpan..." : "Create"}</Button>
               </form>
             </Form>
           </DialogContent>
