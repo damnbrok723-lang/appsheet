@@ -23,6 +23,8 @@ export function NotificationsDropdown() {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["notifications", "dropdown"],
+    staleTime: 60_000,
+    retry: 0,
     queryFn: async () => {
       const response = await fetch("/api/notifications?limit=5");
       if (!response.ok) throw new Error("Unable to load notifications");
