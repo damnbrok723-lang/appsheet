@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ async function fetchReports() {
 
 export default function ReportsPage() {
   const queryClient = useQueryClient();
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0, refetchInterval: 30_000 });
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
@@ -97,7 +98,14 @@ export default function ReportsPage() {
       <div className="rounded-md border bg-muted/40 p-3 text-sm font-medium">Total Qty: <span className="text-lg">{(Number(form.qtyOk) || 0) + qtyNg}</span></div>
       <label className="space-y-2 text-sm font-medium md:col-span-2">Keterangan NG<Textarea {...field("ngNotes")} /></label>
       <label className="space-y-2 text-sm font-medium md:col-span-2">Keterangan Proses<Textarea {...field("processNotes")} /></label>
-      <div className="space-y-3 rounded-md border border-dashed p-4 text-sm font-medium md:col-span-2"><label className="flex cursor-pointer items-center gap-3"><Camera className="h-5 w-5" />Ambil foto atau pilih dari galeri<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handlePhoto} />{form.photoData && <span className="text-xs text-muted-foreground">Foto siap disimpan</span>}</label>{form.photoData && <div className="flex items-start gap-3"><img src={form.photoData} alt="Pratinjau laporan" className="h-24 w-24 rounded-md object-cover" /><Button type="button" variant="outline" size="sm" onClick={clearPhoto}>Ambil ulang</Button></div>}</div>
+      <div className="space-y-3 rounded-md border border-dashed p-4 text-sm font-medium md:col-span-2">
+        <input ref={photoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handlePhoto} />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="outline" onClick={() => photoInputRef.current?.click()}><Camera className="mr-2 h-5 w-5" />{form.photoData ? "Ganti foto" : "Ambil foto atau pilih dari galeri"}</Button>
+          {form.photoData && <span className="text-xs text-muted-foreground">Foto siap disimpan</span>}
+        </div>
+        {form.photoData && <div className="flex flex-wrap items-start gap-4 rounded-md bg-muted/30 p-3"><img src={form.photoData} alt="Pratinjau laporan" className="h-32 w-32 rounded-md border object-cover" /><Button type="button" variant="outline" size="sm" onClick={clearPhoto}>Hapus foto</Button></div>}
+      </div>
       <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-2">{saveMutation.isPending ? "Menyimpan..." : "Simpan Laporan"}</Button>
     </form></CardContent></Card>
     <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => { const canSubmit = report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION"); return <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="flex items-center gap-2 text-right"><div><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift} · Status: {report.status}</p></div>{canSubmit && <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>Kirim</Button>}{isReviewer && report.status === "SUBMITTED" && <><Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>Approve</Button><Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>Revisi</Button><Button type="button" size="sm" variant="destructive" onClick={() => changeStatus(report.id, "REJECTED")}>Tolak</Button></>}</div></div>; })}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
