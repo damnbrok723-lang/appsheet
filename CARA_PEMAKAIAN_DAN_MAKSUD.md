@@ -1,7 +1,7 @@
 # OfficeHub
 ## Panduan Pemakaian User dan Admin
 
-**Versi:** 2.1
+**Versi:** 2.2
 **Tanggal:** 17 September 2026
 
 Dokumen ini menjelaskan tujuan aplikasi, fitur yang tersedia, cara pemakaian
@@ -13,14 +13,13 @@ hasilnya tetap rapi.
 
 ## 1. Maksud Sistem
 
-OfficeHub adalah web app internal untuk mengelola pekerjaan, monitoring
-operasional, laporan produksi, dokumen, kehadiran, notifikasi, dan audit
-aktivitas dalam satu tempat.
+OfficeHub adalah web app internal untuk dashboard operasional, stok NCR,
+output repair, monitoring, laporan produksi, dan audit aktivitas.
 
 Monitoring dan Laporan adalah dua alur berbeda:
 
-- **Monitoring:** data ringkas tanggal, shift, jumlah operator, dan gudang yang
-  menjadi sumber grafik Dashboard.
+- **Monitoring:** data tanggal, shift, jumlah operator, gudang, dan Kepala Regu
+  yang menjadi sumber grafik Dashboard.
 - **Laporan Produksi:** data detail hasil produksi, foto, dan alur review.
 
 ---
@@ -30,8 +29,9 @@ Monitoring dan Laporan adalah dua alur berbeda:
 | Menu/Fitur | Employee/User | Manager | Admin |
 |---|---|---|---|
 | Login, register, logout | Login/logout | Login/logout | Login/logout |
-| Dashboard | Dashboard operasional dan grafik | Dashboard operasional dan grafik | Dashboard operasional dan grafik |
-| Admin Dashboard | Tidak dapat akses | Tidak dapat akses | Statistik organisasi, user, department, team |
+| Dashboard | Grafik operasional | Grafik operasional | Grafik operasional |
+| Stok NCR | Akses sesuai permission | Akses sesuai permission | Akses sesuai permission |
+| Output Repair | Akses monitoring output | Akses monitoring output | Akses monitoring output |
 | Monitoring | Tambah, lihat, import CSV | Tambah, lihat, import CSV | Tambah, lihat, import CSV |
 | Laporan Produksi | Buat, simpan Draft, kirim, kirim ulang setelah Revisi | Buat dan review | Buat dan review |
 | Review laporan | Tidak bisa Approve/Revisi/Tolak | Bisa Approve/Revisi/Tolak | Bisa Approve/Revisi/Tolak |
@@ -136,18 +136,18 @@ tetapi tombol/form frontend untuk aksi tersebut belum disediakan.
 ## 5. Cara Login dan Logout
 
 1. Buka URL aplikasi dan pilih **Login**.
-2. Isi email serta kata sandi.
+2. Isi username serta kata sandi.
 3. Klik **Masuk**.
 4. Setelah berhasil, aplikasi membuka **Dashboard**.
 5. Gunakan tombol **Logout/Keluar** pada header untuk mengakhiri session.
 
 Akun seed untuk Development:
 
-| Role | Email | Password |
+| Role | Username | Password |
 |---|---|---|
-| Admin | admin@example.local | password123 |
-| Manager | manager@example.local | password123 |
-| Employee | andi@example.local | password123 |
+| Admin | `kasie` | `semangatkompakkerjatuntas` |
+| Manager | `kadep` | `semangatkompakkerjatuntas` |
+| Employee | `Repro` | `semangatkompakkerjatuntas` |
 
 Ganti atau hapus akun demo sebelum production. Jangan kirim password atau
 secret melalui chat, issue, atau repository.
@@ -158,8 +158,9 @@ secret melalui chat, issue, atau repository.
 
 ### 5.1 Dashboard
 
-Dashboard menampilkan ringkasan task, anggota, task yang menunggu review,
-event, task terbaru, event mendatang, dan grafik jumlah operator.
+Dashboard menampilkan grafik manpower/output operasional. Setiap batang grafik
+berasal dari input Monitoring dan memuat tanggal, gudang, shift, serta jumlah
+operator.
 
 Grafik monitoring mengambil data dari:
 
@@ -174,9 +175,10 @@ Grafik monitoring mengambil data dari:
 | Kolom | Contoh | Aturan |
 |---|---|---|
 | Tanggal | 2026-09-17 | Wajib |
-| Shift | PAGI | PAGI, SIANG, atau MALAM |
+| Shift | SHIFT_1 | `SHIFT_1`, `SHIFT_2`, `SHIFT_3`, `LONGSHIFT_1`, atau `LONGSHIFT_2` |
 | Jumlah Operator | 12 | Angka nol atau lebih |
-| Gudang | Gudang Utama | Wajib |
+| Gudang | 1 | Hanya `1`, `5`, atau `13` |
+| Kepala Regu | Nama Kepala Regu | Wajib |
 
 3. Klik **Simpan Monitoring**.
 4. Kembali ke Dashboard untuk melihat data pada grafik.
@@ -192,11 +194,29 @@ Grafik monitoring mengambil data dari:
 Header wajib:
 
 ```text
-Tanggal,Shift,Jumlah Operator,Gudang
+Tanggal,Shift,Jumlah Operator,Gudang,Kepala Regu
 ```
 
 Versi saat ini menerima CSV yang kompatibel dengan Excel, bukan file `.xlsx`
 langsung. Untuk file Excel asli, simpan dahulu sebagai CSV UTF-8.
+
+### 5.4 Workbook Excel SAP
+
+Template Excel utama yang tersedia melalui tombol download adalah
+`Control Daily Repair by SAP.xlsx`. Format workbook dipertahankan apa adanya.
+Workbook tersebut memiliki enam sheet:
+
+1. `DashBoard Repair` dengan empat grafik.
+2. `Pivot` sebagai sumber ringkasan grafik.
+3. `Repair` sebagai data SAP utama.
+4. `Stok Grade C` sebagai data stok Grade C.
+5. `MP repair` sebagai data manpower repair.
+6. `Sheet4` sebagai referensi gudang, batch, dan grade.
+
+Grafik workbook mencakup Daily Output Repair ST, Output Repair ST per Gudang,
+Tonase Stok ST Grade C, dan MP Repair ST. File dapat diunduh dari menu laporan
+dan digunakan kembali sebagai template tanpa mengubah struktur sheet, grafik,
+pivot, atau formatnya.
 
 ---
 
@@ -211,12 +231,12 @@ Menu Laporan terpisah dari Monitoring. Isi:
 | Tanggal | Wajib |
 | Customer | Wajib |
 | Dimensi | Wajib |
-| Jenis Pipa | Pilih Kotak, Bulat, atau keduanya |
+| Jenis Pipa | Pilih salah satu: Kotak atau Bulat |
 | Batch | Wajib |
 | No NCR | Wajib bila Qty NG lebih dari 0 |
-| Operator | Pilih Borongan, Internal, atau keduanya |
+| Operator | Pilih salah satu: Borongan atau Internal |
 | Nama Operator | Wajib |
-| Shift | Pagi, Siang, atau Malam |
+| Shift | Pilih `Shift 1`, `Shift 2`, `Shift 3`, `Longshift 1`, atau `Longshift 2` |
 | Qty OK | Angka nol atau lebih |
 | Qty NG | Angka nol atau lebih |
 | Keterangan NG | Isi jika ada Qty NG |
@@ -285,6 +305,10 @@ dengan nilai `SUPABASE_STORAGE_BUCKET` dan sebaiknya bersifat Private.
 ---
 
 ## 9. Kehadiran, Notifikasi, dan Pengumuman
+
+Modul Kehadiran, Notifikasi, dan Pengumuman masih tersedia melalui route lama,
+tetapi tidak ditampilkan pada navigasi utama saat ini. Navigasi utama hanya
+menampilkan Dashboard, Stok NCR, Output Repair, Laporan, dan Monitoring.
 
 ### Kehadiran
 
