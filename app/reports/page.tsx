@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Camera, Download, FileBarChart, Printer } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type Report = { id: string; userId: string; reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; operatorName: string; shift: string; qtyOk: number; qtyNg: number; status: string; photoData?: string | null };
 type ReportForm = { reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; ncrNumber: string; operatorTypes: string[]; operatorName: string; shift: string; qtyOk: string; qtyNg: string; ngNotes: string; processNotes: string; photoData: string };
@@ -22,6 +23,7 @@ async function fetchReports() {
 export default function ReportsPage() {
   const queryClient = useQueryClient();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0, refetchInterval: 30_000 });
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
@@ -33,6 +35,18 @@ export default function ReportsPage() {
       if (!response.ok) throw new Error("Gagal menyimpan laporan");
     },
     onSuccess: () => { toast.success("Laporan berhasil disimpan"); setForm({ ...initialForm, reportDate: form.reportDate }); queryClient.invalidateQueries({ queryKey: ["production-reports"] }); },
+    onError: (error) => toast.error(error.message),
+  });
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/production-reports", { method: "POST", body });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal mengimpor file");
+      return result.data.imported as number;
+    },
+    onSuccess: (count) => { toast.success(`${count} laporan berhasil diimpor`); queryClient.invalidateQueries({ queryKey: ["production-reports"] }); },
     onError: (error) => toast.error(error.message),
   });
 
@@ -51,6 +65,12 @@ export default function ReportsPage() {
     const reader = new FileReader();
     reader.onload = () => setForm((current) => ({ ...current, photoData: String(reader.result) }));
     reader.readAsDataURL(file);
+  }
+
+  function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) importMutation.mutate(file);
+    event.target.value = "";
   }
 
   function clearPhoto() {
@@ -80,6 +100,16 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   }
   const field = (name: keyof ReportForm) => ({ value: form[name] as string, onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: event.target.value }) });
+  const chartData = Object.values((reportsQuery.data ?? []).reduce<Record<string, { date: string; ok: number; ng: number }>>((groups, report) => {
+    const date = new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
+    const current = groups[date] ?? { date, ok: 0, ng: 0 };
+    current.ok += report.qtyOk;
+    current.ng += report.qtyNg;
+    groups[date] = current;
+    return groups;
+  }, {})).reverse();
+  const totalOk = (reportsQuery.data ?? []).reduce((total, report) => total + report.qtyOk, 0);
+  const totalNg = (reportsQuery.data ?? []).reduce((total, report) => total + report.qtyNg, 0);
 
   return <div className="space-y-6">
     <div><h1 className="text-3xl font-bold tracking-tight">Laporan Produksi</h1><p className="text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p></div>
@@ -108,6 +138,12 @@ export default function ReportsPage() {
       </div>
       <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-2">{saveMutation.isPending ? "Menyimpan..." : "Simpan Laporan"}</Button>
     </form></CardContent></Card>
-    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => { const canSubmit = report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION"); return <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="flex items-center gap-2 text-right"><div><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift} · Status: {report.status}</p></div>{canSubmit && <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>Kirim</Button>}{isReviewer && report.status === "SUBMITTED" && <><Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>Approve</Button><Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>Revisi</Button><Button type="button" size="sm" variant="destructive" onClick={() => changeStatus(report.id, "REJECTED")}>Tolak</Button></>}</div></div>; })}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
+    <Card><CardHeader><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Grafik Produksi</h2><p className="text-sm text-muted-foreground">Ringkasan Qty OK dan Qty NG dari data laporan tersimpan.</p></CardHeader><CardContent>
+      {reportsQuery.isLoading ? <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">Memuat grafik...</div> : chartData.length === 0 ? <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">Belum ada data untuk ditampilkan.</div> : <>
+        <div className="mb-5 grid gap-3 sm:grid-cols-2"><div className="rounded-md border border-emerald-200 bg-emerald-50 p-4"><p className="text-sm text-emerald-700">Total Qty OK</p><p className="text-2xl font-semibold text-emerald-900">{totalOk.toLocaleString("id-ID")}</p></div><div className="rounded-md border border-rose-200 bg-rose-50 p-4"><p className="text-sm text-rose-700">Total Qty NG</p><p className="text-2xl font-semibold text-rose-900">{totalNg.toLocaleString("id-ID")}</p></div></div>
+        <div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis allowDecimals={false} /><Tooltip /><Legend /><Bar dataKey="ok" name="Qty OK" fill="#16a34a" radius={[3, 3, 0, 0]} /><Bar dataKey="ng" name="Qty NG" fill="#e11d48" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>
+      </>}
+    </CardContent></Card>
+    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex flex-wrap gap-2"><input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} /><Button type="button" variant="outline" size="sm" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>{importMutation.isPending ? "Mengimpor..." : "Import Excel"}</Button><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => { const canSubmit = report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION"); return <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="flex items-center gap-2 text-right"><div><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift} · Status: {report.status}</p></div>{canSubmit && <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>Kirim</Button>}{isReviewer && report.status === "SUBMITTED" && <><Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>Approve</Button><Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>Revisi</Button><Button type="button" size="sm" variant="destructive" onClick={() => changeStatus(report.id, "REJECTED")}>Tolak</Button></>}</div></div>; })}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
   </div>;
 }
