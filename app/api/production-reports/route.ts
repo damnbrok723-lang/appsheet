@@ -43,6 +43,7 @@ export async function POST(request: Request) {
         pipeTypes: JSON.stringify(data.pipeTypes),
         operatorTypes: JSON.stringify(data.operatorTypes),
         userId: session.user.id as string,
+        status: "DRAFT",
       },
     });
     return Response.json({ success: true, data: report }, { status: 201 });

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Camera, Download, FileBarChart, Printer } from "lucide-react";
 
-type Report = { id: string; reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; operatorName: string; shift: string; qtyOk: number; qtyNg: number; photoData?: string | null };
+type Report = { id: string; reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; operatorName: string; shift: string; qtyOk: number; qtyNg: number; status: string; photoData?: string | null };
 type ReportForm = { reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; ncrNumber: string; operatorTypes: string[]; operatorName: string; shift: string; qtyOk: string; qtyNg: string; ngNotes: string; processNotes: string; photoData: string };
 const initialForm: ReportForm = { reportDate: new Date().toISOString().slice(0, 10), customer: "", dimensions: "", pipeTypes: [], batchNumber: "", ncrNumber: "", operatorTypes: [], operatorName: "", shift: "PAGI", qtyOk: "", qtyNg: "", ngNotes: "", processNotes: "", photoData: "" };
 
@@ -53,6 +53,14 @@ export default function ReportsPage() {
     setForm((current) => ({ ...current, photoData: "" }));
   }
 
+  async function changeStatus(id: string, status: string) {
+    const response = await fetch(`/api/production-reports/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Gagal mengubah status");
+    queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+    toast.success("Status laporan diperbarui");
+  }
+
   function submit(event: FormEvent) { event.preventDefault(); saveMutation.mutate(); }
   function exportCsv() {
     const rows = reportsQuery.data ?? [];
@@ -86,6 +94,6 @@ export default function ReportsPage() {
       <div className="space-y-3 rounded-md border border-dashed p-4 text-sm font-medium md:col-span-2"><label className="flex cursor-pointer items-center gap-3"><Camera className="h-5 w-5" />Ambil foto atau pilih dari galeri<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handlePhoto} />{form.photoData && <span className="text-xs text-muted-foreground">Foto siap disimpan</span>}</label>{form.photoData && <div className="flex items-start gap-3"><img src={form.photoData} alt="Pratinjau laporan" className="h-24 w-24 rounded-md object-cover" /><Button type="button" variant="outline" size="sm" onClick={clearPhoto}>Ambil ulang</Button></div>}</div>
       <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-2">{saveMutation.isPending ? "Menyimpan..." : "Simpan Laporan"}</Button>
     </form></CardContent></Card>
-    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="text-right"><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift}</p></div></div>)}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
+    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="flex items-center gap-2 text-right"><div><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift} · {report.status}</p></div>{report.status === "DRAFT" && <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>Kirim</Button>}{report.status === "SUBMITTED" && <><Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>Approve</Button><Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>Revisi</Button></>}</div></div>)}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
   </div>;
 }
