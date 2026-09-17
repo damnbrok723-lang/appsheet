@@ -1,25 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Plus, Mail, Shield } from "lucide-react";
+import { Search, Plus, Shield } from "lucide-react";
 
 async function fetchUsers() {
-  return [
-    { id: "1", name: "John Doe", email: "john@example.com", role: "ADMIN", status: "ACTIVE" },
-    { id: "2", name: "Jane Smith", email: "jane@example.com", role: "MANAGER", status: "ACTIVE" },
-    { id: "3", name: "Bob Wilson", email: "bob@example.com", role: "EMPLOYEE", status: "ON_LEAVE" },
-  ];
+  const response = await fetch("/api/users?limit=100");
+  if (!response.ok) throw new Error("Gagal memuat pengguna");
+  return (await response.json()).data.users as { id: string; name: string; email: string; role: string; status: string }[];
 }
 
 export default function UsersPage() {
   const query = useQuery({ queryKey: ["admin-users"], queryFn: fetchUsers, staleTime: 5 * 60 * 1000 });
+  const queryClient = useQueryClient();
+  const [showCreate, setShowCreate] = useState(false);
+  const createMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(formData)) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal membuat pengguna");
+    },
+    onSuccess: () => { setShowCreate(false); queryClient.invalidateQueries({ queryKey: ["admin-users"] }); },
+  });
 
   return (
     <div className="space-y-6">
@@ -28,10 +36,11 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground">Manage all user accounts.</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreate((value) => !value)}>
           <Plus className="mr-2 h-4 w-4" /> Add User
         </Button>
       </div>
+      {showCreate && <form action={(formData) => createMutation.mutate(formData)} className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-4"><Input name="name" placeholder="Nama lengkap" required /><Input name="email" type="email" placeholder="Email" required /><Input name="password" type="password" placeholder="Password minimal 6 karakter" minLength={6} required /><select name="role" defaultValue="EMPLOYEE" className="rounded-md border bg-background px-3 py-2 text-sm"><option value="EMPLOYEE">Employee</option><option value="MANAGER">Manager</option><option value="ADMIN">Admin</option></select><Button type="submit" disabled={createMutation.isPending} className="md:col-span-4">{createMutation.isPending ? "Menyimpan..." : "Simpan pengguna"}</Button></form>}
       <Card className="p-4">
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />

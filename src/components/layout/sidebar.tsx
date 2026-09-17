@@ -9,10 +9,12 @@ import {
   FolderKanban,
   Calendar,
   Bell,
+  ClipboardCheck,
   FileBarChart,
   FileText,
   Megaphone,
   UserCheck,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   Settings,
@@ -25,11 +27,13 @@ const menuItems = [
   { name: "Tasks", href: "/tasks", icon: FolderKanban },
   { name: "Team", href: "/team", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Monitoring", href: "/monitoring", icon: ClipboardCheck },
   { name: "Laporan", href: "/reports", icon: FileBarChart },
   { name: "Dokumen", href: "/documents", icon: FileText },
   { name: "Pengumuman", href: "/announcements", icon: Megaphone },
   { name: "Kehadiran", href: "/attendance", icon: UserCheck },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Audit Log", href: "/audit-logs", icon: ShieldCheck },
 ];
 
 export function Sidebar() {
