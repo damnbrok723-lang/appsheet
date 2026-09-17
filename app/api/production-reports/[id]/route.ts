@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     await prisma.activityLog.create({ data: { userId: session.user.id as string, action: "UPDATE", entityType: "ProductionReport", entityId: id, metadata: JSON.stringify({ status: existing.status }) } });
     return Response.json({ success: true, data: serializeReport(updated) });
   } catch (error) {
-    if (error instanceof z.ZodError) return Response.json({ success: false, message: "Validation error", errors: error.issues }, { status: 400 });
+    if (error instanceof z.ZodError) return Response.json({ success: false, message: `Validation error: ${error.issues.map((issue) => `${issue.path.join(".") || "form"} - ${issue.message}`).join("; ")}`, errors: error.issues }, { status: 400 });
     return Response.json({ success: false, message: "Failed to update production report" }, { status: 500 });
   }
 }

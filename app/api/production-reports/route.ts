@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     });
     return Response.json({ success: true, data: report }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) return Response.json({ success: false, message: "Validation error", errors: error.issues }, { status: 400 });
+    if (error instanceof z.ZodError) return Response.json({ success: false, message: `Validation error: ${error.issues.map((issue) => `${issue.path.join(".") || "form"} - ${issue.message}`).join("; ")}`, errors: error.issues }, { status: 400 });
     return Response.json({ success: false, message: "Failed to save production report" }, { status: 500 });
   }
 }
