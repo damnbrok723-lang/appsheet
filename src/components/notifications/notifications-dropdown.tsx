@@ -23,6 +23,7 @@ export function NotificationsDropdown() {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["notifications", "dropdown"],
+    enabled: isOpen,
     staleTime: 60_000,
     retry: 0,
     queryFn: async () => {

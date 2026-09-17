@@ -39,7 +39,11 @@ export async function GET(req: NextRequest) {
     const [events, total] = await Promise.all([
       prisma.event.findMany({
         where,
-        include: { createdBy: true, participants: true, team: true },
+        include: {
+          createdBy: { select: { id: true, name: true, email: true } },
+          participants: { select: { id: true, userId: true, status: true } },
+          team: { select: { id: true, name: true } },
+        },
         skip,
         take: limit,
         orderBy: { startAt: "asc" },

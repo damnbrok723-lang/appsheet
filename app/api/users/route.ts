@@ -28,7 +28,12 @@ export async function GET(request: NextRequest) {
       prisma.user.findMany({
         skip,
         take: limit,
-        include: { roleRef: true, department: true, team: true },
+        select: {
+          id: true, name: true, email: true, role: true, status: true, avatarUrl: true, jobTitle: true,
+          roleRef: { select: { name: true } },
+          department: { select: { id: true, name: true } },
+          team: { select: { id: true, name: true } },
+        },
       }),
       prisma.user.count(),
     ]);

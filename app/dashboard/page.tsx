@@ -11,18 +11,18 @@ import { TrendingUp, Users, FolderKanban, Clock } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 async function fetchDashboardStats() {
-  const [tasksResponse, membersResponse, eventsResponse] = await Promise.all([
-    fetch("/api/tasks?limit=100"),
-    fetch("/api/users?limit=100"),
-    fetch("/api/calendar?limit=100"),
+  const [tasksResponse, reviewResponse, membersResponse, eventsResponse] = await Promise.all([
+    fetch("/api/tasks?limit=1"),
+    fetch("/api/tasks?status=WAITING_REVIEW&limit=1"),
+    fetch("/api/users?limit=1"),
+    fetch("/api/calendar?limit=1"),
   ]);
-  if (!tasksResponse.ok || !membersResponse.ok || !eventsResponse.ok) throw new Error("Unable to load workspace summary");
-  const [tasksResult, membersResult, eventsResult] = await Promise.all([tasksResponse.json(), membersResponse.json(), eventsResponse.json()]);
-  const tasks = tasksResult.data.tasks as Task[];
+  if (!tasksResponse.ok || !reviewResponse.ok || !membersResponse.ok || !eventsResponse.ok) throw new Error("Unable to load workspace summary");
+  const [tasksResult, reviewResult, membersResult, eventsResult] = await Promise.all([tasksResponse.json(), reviewResponse.json(), membersResponse.json(), eventsResponse.json()]);
   return {
-    totalTasks: tasks.length,
+    totalTasks: tasksResult.data.total,
     activeMembers: membersResult.data.total,
-    pendingReviews: tasks.filter((task) => task.status === "WAITING_REVIEW").length,
+    pendingReviews: reviewResult.data.total,
     upcomingEvents: eventsResult.data.total,
   };
 }
@@ -34,7 +34,7 @@ async function fetchRecentTasks() {
 }
 
 async function fetchEvents() {
-  const response = await fetch("/api/calendar?limit=100");
+  const response = await fetch("/api/calendar?limit=10");
   if (!response.ok) throw new Error("Unable to load events");
   return (await response.json()).data.events;
 }

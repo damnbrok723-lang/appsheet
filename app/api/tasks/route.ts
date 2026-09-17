@@ -39,9 +39,9 @@ export async function GET(req: NextRequest) {
         take: limit,
         where,
         include: {
-          createdBy: true,
-          assignedTo: true,
-          team: true,
+          createdBy: { select: { id: true, name: true, email: true } },
+          assignedTo: { select: { id: true, name: true, email: true } },
+          team: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: "desc" },
       }),
