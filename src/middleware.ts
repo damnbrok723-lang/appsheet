@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "../auth";
 
-export async function middleware(request: NextRequest) {
+export default auth((request) => {
   const { pathname } = request.nextUrl;
 
   const publicPaths = ["/login", "/"];
@@ -14,9 +14,10 @@ export async function middleware(request: NextRequest) {
 
   if (isPublic) return NextResponse.next();
 
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  if (token) {
-    if (pathname.startsWith("/admin") && token.role !== "ADMIN") {
+  const session = request.auth;
+  if (session?.user) {
+    const role = (session.user as { role?: string }).role;
+    if (pathname.startsWith("/admin") && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
@@ -29,7 +30,7 @@ export async function middleware(request: NextRequest) {
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("callbackUrl", pathname);
   return NextResponse.redirect(loginUrl);
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
