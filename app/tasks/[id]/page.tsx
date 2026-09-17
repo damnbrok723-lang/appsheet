@@ -6,12 +6,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageSquare, CheckCircle } from "lucide-react";
+import { ArrowLeft, MessageSquare, CheckCircle, Paperclip } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 type TaskComment = { id: string; comment: string; createdAt: string; user?: { name?: string } };
-type TaskDetail = { id: string; title: string; description?: string; priority: string; status: string; dueDate?: string; createdBy: { name: string }; assignedTo?: { name: string }; comments: TaskComment[] };
+type TaskAttachment = { id: string; fileName: string; fileSize: number; createdAt: string; user?: { name?: string } };
+type TaskDetail = { id: string; title: string; description?: string; priority: string; status: string; dueDate?: string; createdBy: { name: string }; assignedTo?: { name: string }; comments: TaskComment[]; attachments: TaskAttachment[] };
 
 async function fetchTask(id: string) {
   const response = await fetch(`/api/tasks/${id}`);
@@ -32,6 +33,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
   const taskQuery = useQuery({ queryKey: ["task", params.id], queryFn: () => fetchTask(params.id), staleTime: 5 * 60 * 1000 });
   const queryClient = useQueryClient();
   const [comment, setComment] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
   const actionMutation = useMutation({
     mutationFn: (action: string) => updateTask(params.id, action),
     onSuccess: () => { toast.success("Task updated"); queryClient.invalidateQueries({ queryKey: ["task", params.id] }); },
@@ -45,6 +47,11 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
       return result.data;
     },
     onSuccess: () => { setComment(""); toast.success("Comment added"); queryClient.invalidateQueries({ queryKey: ["task", params.id] }); },
+    onError: (error) => toast.error(error.message),
+  });
+  const attachmentMutation = useMutation({
+    mutationFn: async () => { if (!attachment) throw new Error("Pilih file terlebih dahulu"); const body = new FormData(); body.set("file", attachment); const response = await fetch(`/api/tasks/${params.id}/attachments`, { method: "POST", body }); const result = await response.json(); if (!response.ok) throw new Error(result.message || "Upload gagal"); },
+    onSuccess: () => { setAttachment(null); toast.success("Lampiran task tersimpan"); queryClient.invalidateQueries({ queryKey: ["task", params.id] }); },
     onError: (error) => toast.error(error.message),
   });
 
@@ -87,6 +94,14 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
                 <p><span className="font-medium">Created by:</span> {task.createdBy.name}</p>
                 <p><span className="font-medium">Due date:</span> {task.dueDate}</p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Paperclip className="h-5 w-5" /> Lampiran Task</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">{task.attachments?.map((file) => <a key={file.id} href={`/api/tasks/${task.id}/attachments/${file.id}`} className="flex items-center justify-between rounded-md border p-3 text-sm hover:bg-accent"><span>{file.fileName}<span className="ml-2 text-xs text-muted-foreground">{(file.fileSize / 1024).toFixed(1)} KB</span></span><span className="text-primary">Download</span></a>)}</div>
+              <div className="flex flex-wrap items-center gap-2"><input type="file" onChange={(event) => setAttachment(event.target.files?.[0] ?? null)} /><Button type="button" onClick={() => attachmentMutation.mutate()} disabled={!attachment || attachmentMutation.isPending}>{attachmentMutation.isPending ? "Uploading..." : "Upload ke task"}</Button></div>
             </CardContent>
           </Card>
 

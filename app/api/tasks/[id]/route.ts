@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         assignedTo: true,
         team: true,
         comments: true,
-        attachments: true,
+        attachments: { include: { user: { select: { name: true } } } },
       },
     });
 
@@ -116,7 +116,7 @@ export async function PATCH(req: NextRequest) {
         assignedTo: true,
         team: true,
         comments: true,
-        attachments: true,
+        attachments: { include: { user: { select: { name: true } } } },
       },
     });
 

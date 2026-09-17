@@ -1,8 +1,9 @@
 "use client";
 
-import { Menu, Search, User } from "lucide-react";
+import { LogOut, Menu, Search, User } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown";
 
@@ -24,6 +25,9 @@ export function Header() {
           <NotificationsDropdown />
           <Button variant="ghost" size="icon" asChild={false}>
             <Link href="/profile"><User className="h-5 w-5" /></Link>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} aria-label="Keluar">
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
