@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+  seed     = "tsx prisma/seed.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  name            String
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  role            String    @default("EMPLOYEE")
+  departmentId    String?   @map("department_id")
+  teamId          String?   @map("team_id")
+  avatarUrl       String?   @map("avatar_url")
+  jobTitle        String?   @map("job_title")
+  status          String    @default("ACTIVE")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  roleRef         Role      @relation(fields: [role], references: [name])
+  department      Department? @relation(fields: [departmentId], references: [id])
+  team            Team?     @relation(fields: [teamId], references: [id])
+  tasksCreated    Task[]    @relation("TasksCreated")
+  tasksAssigned   Task[]    @relation("TasksAssigned")
+  comments        TaskComment[]
+  attachments     TaskAttachment[]
+  eventsCreated   Event[]
+  eventParticipations EventParticipant[]
+  documents       Document[]
+  announcements   Announcement[]
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+  attendance      Attendance[]
+  monitoringEntries MonitoringEntry[]
+  productionReports ProductionReport[]
+  managedTeams    Team[]    @relation("TeamManager")
+  documentPermissions DocumentPermission[]
+  announcementTargets AnnouncementTarget[]
+
+  @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users User[]
+
+  @@map("roles")
+}
+
+model Department {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  users            User[]
+  teams            Team[]
+  announcements    Announcement[]
+  announcementTargets AnnouncementTarget[]
+
+  @@map("departments")
+}
+
+model Team {
+  id          String    @id @default(uuid())
+  departmentId String   @map("department_id")
+  name        String
+  description String?
+  managerId   String?   @map("manager_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  department  Department @relation(fields: [departmentId], references: [id])
+  manager     User?      @relation("TeamManager", fields: [managerId], references: [id])
+  users       User[]
+  tasks       Task[]
+  events      Event[]
+  documents   Document[]
+  announcements Announcement[]
+  announcementTargets AnnouncementTarget[]
+
+  @@map("teams")
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  createdById String    @map("created_by")
+  assignedToId String?  @map("assigned_to")
+  teamId      String?   @map("team_id")
+  priority    String    @default("MEDIUM")
+  status      String    @default("ASSIGNED")
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  createdBy User  @relation("TasksCreated", fields: [createdById], references: [id])
+  assignedTo User? @relation("TasksAssigned", fields: [assignedToId], references: [id])
+  team      Team? @relation(fields: [teamId], references: [id])
+  comments  TaskComment[]
+  attachments TaskAttachment[]
+
+  @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String   @map("task_id")
+  userId    String   @map("user_id")
+  comment   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("task_comments")
+}
+
+model TaskAttachment {
+  id         String   @id @default(uuid())
+  taskId     String   @map("task_id")
+  uploadedById String @map("uploaded_by")
+  fileName   String   @map("file_name")
+  filePath   String   @map("file_path")
+  mimeType   String   @map("mime_type")
+  fileSize   Int      @map("file_size")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [uploadedById], references: [id])
+
+  @@map("task_attachments")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  createdById String   @map("created_by")
+  startAt     DateTime @map("start_at")
+  endAt       DateTime @map("end_at")
+  location    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User                @relation(fields: [createdById], references: [id])
+  participants EventParticipant[]
+  team      Team?              @relation(fields: [teamId], references: [id])
+  teamId    String?            @map("team_id")
+
+  @@map("events")
+}
+
+model EventParticipant {
+  id       String   @id @default(uuid())
+  eventId  String   @map("event_id")
+  userId   String   @map("user_id")
+  status   String   @default("INVITED")
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@map("event_participants")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  filePath    String   @map("file_path")
+  mimeType    String   @map("mime_type")
+  fileSize    Int      @map("file_size")
+  uploadedById String  @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+  permissions DocumentPermission[]
+  team       Team?    @relation(fields: [teamId], references: [id])
+  teamId     String?  @map("team_id")
+
+  @@map("documents")
+}
+
+model DocumentPermission {
+  id          String   @id @default(uuid())
+  documentId  String   @map("document_id")
+  userId      String   @map("user_id")
+  permission  String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("document_permissions")
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  createdById String   @map("created_by")
+  publishedAt DateTime? @map("published_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User                @relation(fields: [createdById], references: [id])
+  targets   AnnouncementTarget[]
+  team      Team?              @relation(fields: [teamId], references: [id])
+  teamId    String?            @map("team_id")
+  department Department?        @relation(fields: [departmentId], references: [id])
+  departmentId String?          @map("department_id")
+
+  @@map("announcements")
+}
+
+model AnnouncementTarget {
+  id            String   @id @default(uuid())
+  announcementId String  @map("announcement_id")
+  departmentId  String?  @map("department_id")
+  teamId        String?  @map("team_id")
+  userId        String?  @map("user_id")
+
+  announcement Announcement @relation(fields: [announcementId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  team         Team?        @relation(fields: [teamId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@map("announcement_targets")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  entityType String? @map("entity_type")
+  entityId  String?  @map("entity_id")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  action    String
+  entityType String? @map("entity_type")
+  entityId  String?  @map("entity_id")
+  metadata  String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  date      DateTime @map("date")
+  checkIn   DateTime? @map("check_in")
+  checkOut  DateTime? @map("check_out")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("attendance")
+}
+
+model MonitoringEntry {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  date          DateTime
+  shift         String
+  operatorCount Int      @map("operator_count")
+  warehouse     String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([date])
+  @@map("monitoring_entries")
+}
+
+model ProductionReport {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  reportDate    DateTime @map("report_date")
+  customer      String
+  dimensions    String
+  pipeTypes     String   @map("pipe_types")
+  batchNumber   String   @map("batch_number")
+  ncrNumber     String?  @map("ncr_number")
+  operatorTypes String   @map("operator_types")
+  operatorName  String   @map("operator_name")
+  shift         String
+  qtyOk         Int      @map("qty_ok")
+  qtyNg         Int      @map("qty_ng")
+  ngNotes       String?  @map("ng_notes")
+  processNotes  String?  @map("process_notes")
+  photoData     String?  @map("photo_data")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([reportDate])
+  @@index([customer])
+  @@map("production_reports")
+}
