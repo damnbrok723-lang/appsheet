@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -18,26 +18,32 @@ import { toast } from "sonner";
 
 const deptSchema = z.object({ name: z.string().min(2), description: z.string().optional() });
 type DeptFormData = z.infer<typeof deptSchema>;
+type DepartmentItem = { id: string; name: string; description?: string | null };
 
 async function fetchDepartments() {
-  return [
-    { id: "1", name: "Engineering", description: "Software development" },
-    { id: "2", name: "Marketing", description: "Marketing and sales" },
-    { id: "3", name: "HR", description: "Human resources" },
-  ];
+  const response = await fetch("/api/departments");
+  if (!response.ok) throw new Error("Gagal memuat departemen");
+  return (await response.json()).data as DepartmentItem[];
 }
 
 export default function DepartmentsPage() {
   const query = useQuery({ queryKey: ["departments"], queryFn: fetchDepartments, staleTime: 5 * 60 * 1000 });
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
   const form = useForm<DeptFormData>({ resolver: zodResolver(deptSchema), defaultValues: { name: "", description: "" } });
 
-  const onSubmit = (data: DeptFormData) => {
-    toast.success("Department created!");
-    setOpen(false);
-    form.reset();
-  };
+  const createMutation = useMutation({
+    mutationFn: async (data: DeptFormData) => {
+      const response = await fetch("/api/departments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal membuat departemen");
+    },
+    onSuccess: () => { toast.success("Departemen dibuat"); setOpen(false); form.reset(); queryClient.invalidateQueries({ queryKey: ["departments"] }); },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const onSubmit = (data: DeptFormData) => createMutation.mutate(data);
 
   return (
     <div className="space-y-6">
@@ -85,7 +91,7 @@ export default function DepartmentsPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit">Create</Button>
+                <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? "Menyimpan..." : "Create"}</Button>
               </form>
             </Form>
           </DialogContent>
