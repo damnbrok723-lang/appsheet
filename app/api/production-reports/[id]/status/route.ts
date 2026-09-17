@@ -15,8 +15,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.status === "SUBMITTED" && report.userId !== session.user.id) {
     return Response.json({ success: false, message: "Anda hanya dapat mengirim laporan milik sendiri" }, { status: 403 });
   }
+  if (body.status === "SUBMITTED" && !["DRAFT", "REVISION"].includes(report.status)) {
+    return Response.json({ success: false, message: "Hanya laporan Draft atau Revision yang dapat dikirim" }, { status: 409 });
+  }
   if (body.status === "APPROVED" || body.status === "REJECTED" || body.status === "REVISION") {
     if (!['ADMIN', 'MANAGER'].includes(role ?? "")) return Response.json({ success: false, message: "Forbidden" }, { status: 403 });
+    if (report.status !== "SUBMITTED") return Response.json({ success: false, message: "Hanya laporan Submitted yang dapat direview" }, { status: 409 });
   }
   const updated = await prisma.productionReport.update({ where: { id }, data: { status: body.status } });
   await prisma.activityLog.create({ data: { userId: session.user.id, action: `REPORT_${body.status}`, entityType: "ProductionReport", entityId: id, metadata: JSON.stringify({ previousStatus: report.status, status: body.status }) } });

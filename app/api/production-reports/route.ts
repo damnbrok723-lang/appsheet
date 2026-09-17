@@ -75,6 +75,14 @@ async function importReports(request: Request, userId: string) {
 
   const reports = imported.map((row) => (row.result.success ? row.result.data : null)).filter((row): row is z.infer<typeof reportSchema> => row !== null);
   await prisma.productionReport.createMany({ data: reports.map((report) => ({ ...report, pipeTypes: JSON.stringify(report.pipeTypes), operatorTypes: JSON.stringify(report.operatorTypes), userId, status: "DRAFT" })) });
+  await prisma.activityLog.create({
+    data: {
+      userId,
+      action: "EXCEL_IMPORTED",
+      entityType: "ProductionReport",
+      metadata: JSON.stringify({ fileName: file.name, totalRows: reports.length, successRows: reports.length, failedRows: 0 }),
+    },
+  });
   return Response.json({ success: true, data: { imported: reports.length } }, { status: 201 });
 }
 
@@ -98,7 +106,10 @@ export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    if (request.headers.get("content-type")?.startsWith("multipart/form-data")) return importReports(request, session.user.id as string);
+    if (request.headers.get("content-type")?.startsWith("multipart/form-data")) {
+      if ((session.user as { role?: string }).role !== "ADMIN") return Response.json({ success: false, message: "Import Excel hanya dapat dilakukan Admin" }, { status: 403 });
+      return importReports(request, session.user.id as string);
+    }
 
     const data = reportSchema.parse(await request.json());
     const report = await prisma.productionReport.create({

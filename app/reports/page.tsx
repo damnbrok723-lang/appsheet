@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Camera, Download, FileBarChart, Printer } from "lucide-react";
+import { Camera, Download, FileBarChart, Pencil, Printer, Trash2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import * as XLSX from "xlsx";
 
-type Report = { id: string; userId: string; reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; operatorName: string; shift: string; qtyOk: number; qtyNg: number; status: string; photoData?: string | null };
+type Report = { id: string; userId: string; reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; ncrNumber?: string | null; operatorTypes: string[]; operatorName: string; shift: string; qtyOk: number; qtyNg: number; ngNotes?: string | null; processNotes?: string | null; status: string; photoData?: string | null };
 type ReportForm = { reportDate: string; customer: string; dimensions: string; pipeTypes: string[]; batchNumber: string; ncrNumber: string; operatorTypes: string[]; operatorName: string; shift: string; qtyOk: string; qtyNg: string; ngNotes: string; processNotes: string; photoData: string };
 const initialForm: ReportForm = { reportDate: new Date().toISOString().slice(0, 10), customer: "", dimensions: "", pipeTypes: [], batchNumber: "", ncrNumber: "", operatorTypes: [], operatorName: "", shift: "PAGI", qtyOk: "", qtyNg: "", ngNotes: "", processNotes: "", photoData: "" };
 
@@ -27,14 +28,16 @@ export default function ReportsPage() {
   const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0, refetchInterval: 30_000 });
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const currentUser = sessionQuery.data?.user as { id?: string; role?: string } | undefined;
   const isReviewer = currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/production-reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, qtyOk: Number(form.qtyOk), qtyNg: Number(form.qtyNg) }) });
-      if (!response.ok) throw new Error("Gagal menyimpan laporan");
+      const response = await fetch(editingId ? `/api/production-reports/${editingId}` : "/api/production-reports", { method: editingId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, qtyOk: Number(form.qtyOk), qtyNg: Number(form.qtyNg) }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal menyimpan laporan");
     },
-    onSuccess: () => { toast.success("Laporan berhasil disimpan"); setForm({ ...initialForm, reportDate: form.reportDate }); queryClient.invalidateQueries({ queryKey: ["production-reports"] }); },
+    onSuccess: () => { toast.success(editingId ? "Laporan berhasil diperbarui" : "Laporan berhasil disimpan"); setEditingId(null); setForm({ ...initialForm, reportDate: form.reportDate }); queryClient.invalidateQueries({ queryKey: ["production-reports"] }); },
     onError: (error) => toast.error(error.message),
   });
   const importMutation = useMutation({
@@ -47,6 +50,11 @@ export default function ReportsPage() {
       return result.data.imported as number;
     },
     onSuccess: (count) => { toast.success(`${count} laporan berhasil diimpor`); queryClient.invalidateQueries({ queryKey: ["production-reports"] }); },
+    onError: (error) => toast.error(error.message),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { const response = await fetch(`/api/production-reports/${id}`, { method: "DELETE" }); const result = await response.json(); if (!response.ok) throw new Error(result.message || "Gagal menghapus laporan"); },
+    onSuccess: () => { toast.success("Laporan dihapus"); queryClient.invalidateQueries({ queryKey: ["production-reports"] }); },
     onError: (error) => toast.error(error.message),
   });
 
@@ -73,6 +81,12 @@ export default function ReportsPage() {
     event.target.value = "";
   }
 
+  function editReport(report: Report) {
+    setEditingId(report.id);
+    setForm({ reportDate: report.reportDate.slice(0, 10), customer: report.customer, dimensions: report.dimensions, pipeTypes: report.pipeTypes, batchNumber: report.batchNumber, ncrNumber: report.ncrNumber ?? "", operatorTypes: report.operatorTypes, operatorName: report.operatorName, shift: report.shift, qtyOk: String(report.qtyOk), qtyNg: String(report.qtyNg), ngNotes: report.ngNotes ?? "", processNotes: report.processNotes ?? "", photoData: report.photoData ?? "" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function clearPhoto() {
     setForm((current) => ({ ...current, photoData: "" }));
   }
@@ -90,12 +104,17 @@ export default function ReportsPage() {
   function submit(event: FormEvent) { event.preventDefault(); saveMutation.mutate(); }
   function exportCsv() {
     const rows = reportsQuery.data ?? [];
-    const header = ["Tanggal", "Customer", "Dimensi", "Jenis Pipa", "Batch", "Operator", "Shift", "Qty OK", "Qty NG"];
-    const lines = [header, ...rows.map((report) => [report.reportDate, report.customer, report.dimensions, report.pipeTypes.join("; "), report.batchNumber, report.operatorName, report.shift, report.qtyOk, report.qtyNg])].map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","));
-    const url = URL.createObjectURL(new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
+    const sheet = XLSX.utils.json_to_sheet(rows.map((report) => ({ Tanggal: report.reportDate, Customer: report.customer, Dimensi: report.dimensions, "Jenis Pipa": report.pipeTypes.join("; "), Batch: report.batchNumber, "No NCR": report.ncrNumber ?? "", "Jenis Operator": report.operatorTypes.join("; "), Operator: report.operatorName, Shift: report.shift, "Qty OK": report.qtyOk, "Qty NG": report.qtyNg, Status: report.status })));
+    sheet["!cols"] = [{ wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
+    sheet["!autofilter"] = { ref: `A1:L${rows.length + 1}` };
+    sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "Laporan Produksi");
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `laporan-produksi-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `laporan-produksi-${new Date().toISOString().slice(0, 10)}.xlsx`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -113,7 +132,7 @@ export default function ReportsPage() {
 
   return <div className="space-y-6">
     <div><h1 className="text-3xl font-bold tracking-tight">Laporan Produksi</h1><p className="text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p></div>
-    <Card><CardHeader><h2 className="text-lg font-semibold">Input Laporan</h2></CardHeader><CardContent><form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
+    <Card><CardHeader><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">{editingId ? "Edit Laporan" : "Input Laporan"}</h2>{editingId && <Button type="button" variant="outline" size="sm" onClick={() => { setEditingId(null); setForm(initialForm); }}>Batal Edit</Button>}</div></CardHeader><CardContent><form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
       <label className="space-y-2 text-sm font-medium">Tanggal<Input type="date" required {...field("reportDate")} /></label>
       <label className="space-y-2 text-sm font-medium">Customer<Input required {...field("customer")} /></label>
       <label className="space-y-2 text-sm font-medium">Dimensi<Input required placeholder="Contoh: 100 x 50 x 3 mm" {...field("dimensions")} /></label>
@@ -136,7 +155,7 @@ export default function ReportsPage() {
         </div>
         {form.photoData && <div className="flex flex-wrap items-start gap-4 rounded-md bg-muted/30 p-3"><img src={form.photoData} alt="Pratinjau laporan" className="h-32 w-32 rounded-md border object-cover" /><Button type="button" variant="outline" size="sm" onClick={clearPhoto}>Hapus foto</Button></div>}
       </div>
-      <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-2">{saveMutation.isPending ? "Menyimpan..." : "Simpan Laporan"}</Button>
+      <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-2">{saveMutation.isPending ? "Menyimpan..." : editingId ? "Perbarui Laporan" : "Simpan Laporan"}</Button>
     </form></CardContent></Card>
     <Card><CardHeader><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Grafik Produksi</h2><p className="text-sm text-muted-foreground">Ringkasan Qty OK dan Qty NG dari data laporan tersimpan.</p></CardHeader><CardContent>
       {reportsQuery.isLoading ? <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">Memuat grafik...</div> : chartData.length === 0 ? <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">Belum ada data untuk ditampilkan.</div> : <>
@@ -144,6 +163,6 @@ export default function ReportsPage() {
         <div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis allowDecimals={false} /><Tooltip /><Legend /><Bar dataKey="ok" name="Qty OK" fill="#16a34a" radius={[3, 3, 0, 0]} /><Bar dataKey="ng" name="Qty NG" fill="#e11d48" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>
       </>}
     </CardContent></Card>
-    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex flex-wrap gap-2"><a href="/laporan-produksi-template.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium">Download Template</a><input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} /><Button type="button" variant="outline" size="sm" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>{importMutation.isPending ? "Mengimpor..." : "Import Excel"}</Button><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => { const canSubmit = report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION"); return <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="flex items-center gap-2 text-right"><div><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift} · Status: {report.status}</p></div>{canSubmit && <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>Kirim</Button>}{isReviewer && report.status === "SUBMITTED" && <><Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>Approve</Button><Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>Revisi</Button><Button type="button" size="sm" variant="destructive" onClick={() => changeStatus(report.id, "REJECTED")}>Tolak</Button></>}</div></div>; })}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
+    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-semibold"><FileBarChart className="h-5 w-5" />Laporan Tersimpan</h2><div className="flex flex-wrap gap-2"><a href="/laporan-produksi-template.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium">Download Template</a><input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} /><Button type="button" variant="outline" size="sm" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>{importMutation.isPending ? "Mengimpor..." : "Import Excel"}</Button><Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!reportsQuery.data?.length}><Download className="mr-2 h-4 w-4" />Export Excel</Button><Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!reportsQuery.data?.length}><Printer className="mr-2 h-4 w-4" />Export PDF</Button></div></div></CardHeader><CardContent><div className="divide-y">{(reportsQuery.data ?? []).map((report) => { const canSubmit = report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION"); const canEdit = currentUser?.role === "ADMIN" || (report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION")); const canDelete = currentUser?.role === "ADMIN" || (report.userId === currentUser?.id && report.status === "DRAFT"); return <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{report.customer}</strong><p className="text-muted-foreground">{new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}</p></div><div className="flex items-center gap-2 text-right"><div><p>OK {report.qtyOk} · NG {report.qtyNg}</p><p className="text-muted-foreground">{report.operatorName} · {report.shift} · Status: {report.status}</p></div>{canEdit && <Button type="button" variant="outline" size="sm" onClick={() => editReport(report)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>}{canDelete && <Button type="button" variant="destructive" size="sm" onClick={() => deleteMutation.mutate(report.id)} disabled={deleteMutation.isPending}><Trash2 className="mr-1 h-4 w-4" />Hapus</Button>}{canSubmit && <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>Kirim</Button>}{isReviewer && report.status === "SUBMITTED" && <><Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>Approve</Button><Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>Revisi</Button><Button type="button" size="sm" variant="destructive" onClick={() => changeStatus(report.id, "REJECTED")}>Tolak</Button></>}</div></div>; })}</div>{reportsQuery.data?.length === 0 && <p className="py-8 text-center text-muted-foreground">Belum ada laporan.</p>}</CardContent></Card>
   </div>;
 }

@@ -12,14 +12,17 @@ const monitoringSchema = z.object({
 export async function GET() {
   const session = await getSession();
   if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  const role = (session.user as { role?: string }).role;
+  const entryWhere = role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string };
 
   const [entries, production] = await Promise.all([
     prisma.monitoringEntry.findMany({
+      where: entryWhere,
       orderBy: { date: "desc" },
       take: 30,
       select: { id: true, date: true, shift: true, operatorCount: true, warehouse: true },
     }),
-    prisma.productionReport.aggregate({ _sum: { qtyOk: true, qtyNg: true } }),
+    prisma.productionReport.aggregate({ where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string }, _sum: { qtyOk: true, qtyNg: true } }),
   ]);
   entries.reverse();
   const qtyOk = production._sum.qtyOk ?? 0;

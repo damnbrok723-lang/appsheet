@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/permissions";
+import type { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -20,12 +21,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
+    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id as string }, select: { id: true, role: true, departmentId: true, teamId: true } });
+    if (!currentUser) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    const where: Prisma.UserWhereInput = currentUser.role === "ADMIN"
+      ? {}
+      : currentUser.role === "MANAGER"
+        ? { OR: [{ departmentId: currentUser.departmentId ?? undefined }, { teamId: currentUser.teamId ?? undefined }] }
+        : { id: currentUser.id };
+
     const page = parseInt(request.nextUrl.searchParams.get("page") || "1");
     const limit = parseInt(request.nextUrl.searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
+        where,
         skip,
         take: limit,
         select: {
@@ -35,7 +45,7 @@ export async function GET(request: NextRequest) {
           team: { select: { id: true, name: true } },
         },
       }),
-      prisma.user.count(),
+      prisma.user.count({ where }),
     ]);
 
     return NextResponse.json({

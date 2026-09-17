@@ -23,6 +23,7 @@ export async function GET(
     }
 
     const { id } = await params;
+    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id as string }, select: { id: true, role: true, departmentId: true, teamId: true } });
     const user = await prisma.user.findUnique({
       where: { id },
       include: { roleRef: true, department: true, team: true },
@@ -31,6 +32,8 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
     }
+    const canRead = currentUser?.role === "ADMIN" || user.id === currentUser?.id || (currentUser?.role === "MANAGER" && (user.departmentId === currentUser.departmentId || user.teamId === currentUser.teamId));
+    if (!canRead) return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
 
     return NextResponse.json({
       success: true,
