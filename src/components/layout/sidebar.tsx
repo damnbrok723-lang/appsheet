@@ -37,14 +37,14 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className={cn("sticky top-0 z-30 flex h-screen flex-col border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64")}>
+    <aside className={cn("flex h-full min-h-0 flex-col border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64")}>
       <div className="flex h-16 items-center justify-between border-b px-4">
         {!collapsed && <span className="text-lg font-bold">OfficeHub</span>}
         <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)}>
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
-      <nav className="flex-1 space-y-1 p-2">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
         {menuItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (

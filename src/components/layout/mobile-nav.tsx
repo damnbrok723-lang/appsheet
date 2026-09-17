@@ -17,7 +17,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="shrink-0 border-t bg-background md:hidden">
+    <nav className="z-20 shrink-0 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="flex items-center justify-around py-1">
         {mobileItems.map((item) => {
           const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
