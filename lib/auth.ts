@@ -1,6 +1,5 @@
 import type { AuthConfig } from "@auth/core";
 import Credentials from "@auth/core/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "./db";
@@ -11,7 +10,6 @@ const loginSchema = z.object({
 });
 
 export const authConfig: AuthConfig = {
-  adapter: PrismaAdapter(prisma) as AuthConfig["adapter"],
   providers: [
     Credentials({
       name: "Credentials",
