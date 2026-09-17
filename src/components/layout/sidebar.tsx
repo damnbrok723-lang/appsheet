@@ -9,6 +9,10 @@ import {
   FolderKanban,
   Calendar,
   Bell,
+  FileBarChart,
+  FileText,
+  Megaphone,
+  UserCheck,
   ChevronLeft,
   ChevronRight,
   Settings,
@@ -21,6 +25,10 @@ const menuItems = [
   { name: "Tasks", href: "/tasks", icon: FolderKanban },
   { name: "Team", href: "/team", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Laporan", href: "/reports", icon: FileBarChart },
+  { name: "Dokumen", href: "/documents", icon: FileText },
+  { name: "Pengumuman", href: "/announcements", icon: Megaphone },
+  { name: "Kehadiran", href: "/attendance", icon: UserCheck },
   { name: "Notifications", href: "/notifications", icon: Bell },
 ];
 
