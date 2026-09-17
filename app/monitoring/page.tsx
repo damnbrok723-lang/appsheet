@@ -16,12 +16,24 @@ const warehouses = ["1", "5", "13"];
 async function fetchMonitoring() {
   const response = await fetch("/api/monitoring");
   if (!response.ok) throw new Error("Gagal memuat monitoring");
-  return (await response.json()).data as MonitoringData;
+  const data = (await response.json()).data as MonitoringData;
+  window.localStorage.setItem("officehub-monitoring-cache", JSON.stringify(data));
+  return data;
+}
+
+function getCachedMonitoring() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const cached = window.localStorage.getItem("officehub-monitoring-cache");
+    return cached ? JSON.parse(cached) as MonitoringData : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export default function MonitoringPage() {
   const queryClient = useQueryClient();
-  const query = useQuery({ queryKey: ["monitoring"], queryFn: fetchMonitoring });
+  const query = useQuery({ queryKey: ["monitoring"], queryFn: fetchMonitoring, initialData: getCachedMonitoring, staleTime: 30_000, refetchOnWindowFocus: false });
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [shift, setShift] = useState("SHIFT_1");
   const [operatorCount, setOperatorCount] = useState("");
