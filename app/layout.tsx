@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "OfficeHub",
+  applicationName: "OfficeHub",
   description: "OfficeHub - Modern Office Management",
 };
 
