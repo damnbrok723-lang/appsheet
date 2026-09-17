@@ -28,7 +28,7 @@ export function RealtimeProvider() {
     const client = supabaseBrowser;
     if (!client) return;
 
-    const channel = client.channel("officehub-database-changes");
+    const channel = client.channel(`officehub-database-changes-${Math.random().toString(36).slice(2)}`);
     for (const table of realtimeTables) {
       channel.on(
         "postgres_changes",
