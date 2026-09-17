@@ -13,6 +13,7 @@ model User {
   id              String    @id @default(uuid())
   name            String
   email           String    @unique
+  username        String?   @unique
   passwordHash    String    @map("password_hash")
   role            String    @default("EMPLOYEE")
   departmentId    String?   @map("department_id")
@@ -295,6 +296,7 @@ model MonitoringEntry {
   shift         String
   operatorCount Int      @map("operator_count")
   warehouse     String
+  teamLeader    String?  @map("team_leader")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

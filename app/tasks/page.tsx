@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TaskCard } from "@/components/tasks/task-card";
 import type { Task } from "@/components/tasks/task-card";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Filter, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,10 +20,8 @@ async function fetchTasks() {
 export default function TasksPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingTask, setEditingTask] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
   const queryClient = useQueryClient();
-  const tasksQuery = useQuery({ queryKey: ["tasks"], queryFn: fetchTasks, staleTime: 0, refetchInterval: 30_000 });
-  const visibleTasks = useMemo(() => (tasksQuery.data ?? []).filter((task) => filter === "ALL" || (filter === "COMPLETED" ? task.status === "COMPLETED" : task.status !== "COMPLETED")), [tasksQuery.data, filter]);
+  const tasksQuery = useQuery({ queryKey: ["tasks"], queryFn: fetchTasks, staleTime: 5 * 60 * 1000 });
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const values = Object.fromEntries(formData);
@@ -70,15 +68,15 @@ export default function TasksPage() {
 
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground"><Filter className="h-4 w-4" /> Filters</span>
-        <Button type="button" size="sm" variant={filter === "ALL" ? "secondary" : "outline"} onClick={() => setFilter("ALL")}>All</Button>
-        <Button type="button" size="sm" variant={filter === "ACTIVE" ? "secondary" : "outline"} onClick={() => setFilter("ACTIVE")}>Active</Button>
-        <Button type="button" size="sm" variant={filter === "COMPLETED" ? "secondary" : "outline"} onClick={() => setFilter("COMPLETED")}>Completed</Button>
+        <Badge variant="secondary">All</Badge>
+        <Badge variant="outline">Active</Badge>
+        <Badge variant="outline">Completed</Badge>
       </div>
 
       {tasksQuery.isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-32" />)}</div>
-      ) : visibleTasks.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{visibleTasks.map((task) => <div key={task.id} className="relative">
+      ) : tasksQuery.data && tasksQuery.data.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{tasksQuery.data.map((task) => <div key={task.id} className="relative">
           {editingTask === task.id ? <form action={(formData) => updateMutation.mutate({ id: task.id, formData })} className="space-y-3 rounded-lg border bg-card p-4">
             <input name="title" defaultValue={task.title} required className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
             <textarea name="description" defaultValue={task.description} className="w-full rounded-md border bg-background px-3 py-2 text-sm" />

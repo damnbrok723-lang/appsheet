@@ -44,12 +44,13 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@example.local" },
-    update: { name: "Admin User", role: "ADMIN", status: "ACTIVE" },
+    update: { name: "Admin User", username: "kasie", passwordHash: await hash("semangatkompakkerjatuntas", 12), role: "ADMIN", status: "ACTIVE" },
     create: {
       id: "admin-user",
       name: "Admin User",
+      username: "kasie",
       email: "admin@example.local",
-      passwordHash: await hash("password123", 12),
+      passwordHash: await hash("semangatkompakkerjatuntas", 12),
       role: "ADMIN",
       status: "ACTIVE",
       jobTitle: "System Administrator",
@@ -58,12 +59,13 @@ async function main() {
 
   const manager = await prisma.user.upsert({
     where: { email: "manager@example.local" },
-    update: { name: "Manager User", role: "MANAGER", departmentId: itDept.id, teamId: devTeam.id, status: "ACTIVE" },
+    update: { name: "Manager User", username: "kadep", passwordHash: await hash("semangatkompakkerjatuntas", 12), role: "MANAGER", departmentId: itDept.id, teamId: devTeam.id, status: "ACTIVE" },
     create: {
       id: "manager-user",
       name: "Manager User",
+      username: "kadep",
       email: "manager@example.local",
-      passwordHash: await hash("password123", 12),
+      passwordHash: await hash("semangatkompakkerjatuntas", 12),
       role: "MANAGER",
       departmentId: itDept.id,
       teamId: devTeam.id,
@@ -76,12 +78,13 @@ async function main() {
 
   const andi = await prisma.user.upsert({
     where: { email: "andi@example.local" },
-    update: { name: "Andi Pratama", role: "EMPLOYEE", departmentId: itDept.id, teamId: devTeam.id, status: "ACTIVE" },
+    update: { name: "Andi Pratama", username: "Repro", passwordHash: await hash("semangatkompakkerjatuntas", 12), role: "EMPLOYEE", departmentId: itDept.id, teamId: devTeam.id, status: "ACTIVE" },
     create: {
       id: "andi-user",
       name: "Andi Pratama",
+      username: "Repro",
       email: "andi@example.local",
-      passwordHash: await hash("password123", 12),
+      passwordHash: await hash("semangatkompakkerjatuntas", 12),
       role: "EMPLOYEE",
       departmentId: itDept.id,
       teamId: devTeam.id,

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "./db";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string().trim().min(1).max(80),
   password: z.string().min(6),
 });
 
@@ -15,7 +15,7 @@ export const authConfig: AuthConfig = {
     Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
@@ -23,7 +23,7 @@ export const authConfig: AuthConfig = {
         if (!validated.success) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: validated.data.email },
+          where: { username: validated.data.username },
           include: { roleRef: true },
         });
 

@@ -13,7 +13,7 @@ const reportSchema = z.object({
   ncrNumber: z.string().trim().max(120).optional(),
   operatorTypes: z.array(z.enum(["BORONGAN", "INTERNAL"])).min(1),
   operatorName: z.string().trim().min(1).max(160),
-  shift: z.enum(["PAGI", "SIANG", "MALAM"]),
+  shift: z.enum(["SHIFT_1", "SHIFT_2", "SHIFT_3", "LONGSHIFT_1", "LONGSHIFT_2", "PAGI", "SIANG", "MALAM"]),
   qtyOk: z.coerce.number().int().min(0),
   qtyNg: z.coerce.number().int().min(0),
   ngNotes: z.string().trim().max(2000).optional(),
@@ -30,7 +30,12 @@ function textValue(value: unknown) {
 }
 
 function listValue(value: unknown, allowed: Record<string, string>) {
-  return textValue(value).split(/[;,|]/).map((item) => allowed[item.trim().toUpperCase()] ?? "").filter(Boolean);
+  return textValue(value).split(/[;,|]/).map((item) => allowed[item.trim().toUpperCase()] ?? "").filter(Boolean).slice(0, 1);
+}
+
+function shiftValue(value: unknown) {
+  const normalized = textValue(value).toUpperCase().replace(/[\s-]+/g, "_");
+  return ({ "1": "SHIFT_1", "2": "SHIFT_2", "3": "SHIFT_3", "LONG_1": "LONGSHIFT_1", "LONG_2": "LONGSHIFT_2" } as Record<string, string>)[normalized] ?? normalized;
 }
 
 function normalizeHeader(value: string) {
@@ -44,7 +49,8 @@ async function importReports(request: Request, userId: string) {
   if (file.size > 10 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 10 MB" }, { status: 400 });
 
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const sheetName = workbook.SheetNames.find((name) => ["mp repair", "laporan produksi"].includes(name.trim().toLowerCase())) ?? workbook.SheetNames.find((name) => name.trim().toLowerCase() === "repair") ?? workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
   if (!sheet) return Response.json({ success: false, message: "Sheet Excel tidak ditemukan" }, { status: 400 });
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
   if (!rows.length) return Response.json({ success: false, message: "File Excel tidak memiliki data" }, { status: 400 });
@@ -61,7 +67,7 @@ async function importReports(request: Request, userId: string) {
       ncrNumber: textValue(normalized.noncr || normalized.ncrnumber),
       operatorTypes: listValue(normalized.jenisoperator || normalized.tipeoperator, { BORONGAN: "BORONGAN", INTERNAL: "INTERNAL" }),
       operatorName: textValue(normalized.namaoperator || normalized.operator),
-      shift: textValue(normalized.shift).toUpperCase(),
+      shift: shiftValue(normalized.shift),
       qtyOk: Number(normalized.qtyok || normalized.ok),
       qtyNg: Number(normalized.qtyng || normalized.ng),
       ngNotes: textValue(normalized.keteranganng),

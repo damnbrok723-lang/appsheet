@@ -4,9 +4,10 @@ import { z } from "zod";
 
 const monitoringSchema = z.object({
   date: z.coerce.date(),
-  shift: z.enum(["PAGI", "SIANG", "MALAM"]),
+  shift: z.enum(["SHIFT_1", "SHIFT_2", "SHIFT_3", "LONGSHIFT_1", "LONGSHIFT_2"]),
   operatorCount: z.coerce.number().int().min(0),
-  warehouse: z.string().trim().min(1).max(120),
+  warehouse: z.enum(["1", "5", "13"]),
+  teamLeader: z.string().trim().min(1).max(120),
 });
 
 export async function GET() {
@@ -20,7 +21,7 @@ export async function GET() {
       where: entryWhere,
       orderBy: { date: "desc" },
       take: 30,
-      select: { id: true, date: true, shift: true, operatorCount: true, warehouse: true },
+      select: { id: true, date: true, shift: true, operatorCount: true, warehouse: true, teamLeader: true },
     }),
     prisma.productionReport.aggregate({ where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string }, _sum: { qtyOk: true, qtyNg: true } }),
   ]);

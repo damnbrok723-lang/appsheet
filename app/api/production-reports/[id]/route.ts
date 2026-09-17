@@ -11,7 +11,7 @@ const updateReportSchema = z.object({
   ncrNumber: z.string().trim().max(120).optional(),
   operatorTypes: z.array(z.enum(["BORONGAN", "INTERNAL"])).min(1),
   operatorName: z.string().trim().min(1).max(160),
-  shift: z.enum(["PAGI", "SIANG", "MALAM"]),
+  shift: z.enum(["SHIFT_1", "SHIFT_2", "SHIFT_3", "LONGSHIFT_1", "LONGSHIFT_2", "PAGI", "SIANG", "MALAM"]),
   qtyOk: z.coerce.number().int().min(0),
   qtyNg: z.coerce.number().int().min(0),
   ngNotes: z.string().trim().max(2000).optional(),

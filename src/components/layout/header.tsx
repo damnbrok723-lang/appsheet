@@ -1,50 +1,16 @@
 "use client";
 
-import { LogOut, Menu, Search, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Menu, Search, User } from "lucide-react";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown";
 
 export function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/auth/session")
-      .then((response) => response.ok ? response.json() : null)
-      .then((session) => {
-        if (active) setRole(session?.user?.role ?? null);
-      })
-      .catch(() => {
-        if (active) setRole(null);
-      });
-    return () => { active = false; };
-  }, []);
-
-  const sharedLinks = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Tasks", href: "/tasks" },
-    { label: "Calendar", href: "/calendar" },
-    { label: "Monitoring", href: "/monitoring" },
-    { label: "Laporan", href: "/reports" },
-    { label: "Dokumen", href: "/documents" },
-    { label: "Kehadiran", href: "/attendance" },
-    { label: "Pengumuman", href: "/announcements" },
-    { label: "Notifikasi", href: "/notifications" },
-  ];
-  const mobileLinks = role === "ADMIN"
-    ? [...sharedLinks, { label: "Team", href: "/team" }, { label: "Admin Dashboard", href: "/dashboard/admin" }, { label: "Users", href: "/admin/users" }, { label: "Departments", href: "/admin/departments" }, { label: "Teams", href: "/admin/teams" }, { label: "Audit Log", href: "/audit-logs" }]
-    : role === "MANAGER"
-      ? [...sharedLinks, { label: "Team", href: "/team" }]
-      : sharedLinks;
   return (
     <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen((open) => !open)} aria-label="Buka menu">
+          <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
           <div className="relative hidden sm:block">
@@ -57,12 +23,8 @@ export function Header() {
           <Button variant="ghost" size="icon" asChild={false}>
             <Link href="/profile"><User className="h-5 w-5" /></Link>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} aria-label="Keluar">
-            <LogOut className="h-5 w-5" />
-          </Button>
         </div>
       </div>
-      {menuOpen && <nav className="border-t bg-background p-3 md:hidden"><div className="grid grid-cols-2 gap-2">{mobileLinks.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="rounded-md border px-3 py-2 text-sm">{item.label}</Link>)}</div></nav>}
     </header>
   );
 }

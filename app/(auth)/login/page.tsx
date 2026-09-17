@@ -18,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const result = await signIn("credentials", {
-        email: formData.get("email"),
+        username: formData.get("username"),
         password: formData.get("password"),
         redirect: false,
       });
@@ -27,7 +27,7 @@ export default function LoginPage() {
         toast.success("Login berhasil");
         router.replace("/dashboard");
       } else {
-        toast.error("Email atau kata sandi tidak valid");
+        toast.error("Username atau kata sandi tidak valid");
       }
     } catch {
       toast.error("Terjadi kesalahan. Silakan coba lagi.");
@@ -45,7 +45,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form action={onSubmit} className="space-y-4">
-            <label className="block space-y-2 text-sm font-medium">Email<Input name="email" type="email" placeholder="nama@perusahaan.com" autoComplete="email" required /></label>
+            <label className="block space-y-2 text-sm font-medium">Username<Input name="username" type="text" placeholder="Masukkan username" autoComplete="username" required /></label>
             <label className="block space-y-2 text-sm font-medium">Kata sandi<div className="relative"><Input name="password" type={showPassword ? "text" : "password"} placeholder="Masukkan kata sandi" autoComplete="current-password" minLength={6} required className="pr-10" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></label>
             <Button type="submit" className="w-full" disabled={isLoading}>{isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{isLoading ? "Memproses..." : "Masuk"}</Button>
           </form>

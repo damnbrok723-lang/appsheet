@@ -24,8 +24,6 @@ const validTransitions: Record<string, string[]> = {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session?.user?.id) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     const url = new URL(req.url);
     const id = url.pathname.split("/").pop();
 
@@ -40,16 +38,12 @@ export async function GET(req: NextRequest) {
         assignedTo: true,
         team: true,
         comments: true,
-        attachments: { include: { user: { select: { name: true } } } },
+        attachments: true,
       },
     });
 
     if (!task) {
       return NextResponse.json({ success: false, message: "Task not found" }, { status: 404 });
-    }
-    const role = (session.user as { role?: string }).role;
-    if (role !== "ADMIN" && role !== "MANAGER" && task.createdById !== session.user.id && task.assignedToId !== session.user.id) {
-      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json({
@@ -97,9 +91,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
     }
 
-    if (validated.assignedTo !== undefined && !["ADMIN", "MANAGER"].includes(currentUserRole ?? "")) {
-      return NextResponse.json({ success: false, message: "Only managers and admins can assign tasks" }, { status: 403 });
-    }
     if (validated.status && existingTask.status !== validated.status) {
       const allowedTransitions = validTransitions[existingTask.status];
       if (!allowedTransitions?.includes(validated.status)) {
@@ -108,14 +99,6 @@ export async function PATCH(req: NextRequest) {
           { status: 400 }
         );
       }
-      const reviewerStatuses = ["APPROVED", "REVISION", "BLOCKED"];
-      const assigneeStatuses = ["ACCEPTED", "IN_PROGRESS", "WAITING_REVIEW"];
-      if (reviewerStatuses.includes(validated.status) && !["ADMIN", "MANAGER"].includes(currentUserRole ?? "")) {
-        return NextResponse.json({ success: false, message: "Only managers and admins can review tasks" }, { status: 403 });
-      }
-      if (assigneeStatuses.includes(validated.status) && existingTask.assignedToId !== currentUserId && !["ADMIN", "MANAGER"].includes(currentUserRole ?? "")) {
-        return NextResponse.json({ success: false, message: "Only the assignee can update this task" }, { status: 403 });
-      }
     }
 
     const task = await prisma.task.update({
@@ -123,7 +106,7 @@ export async function PATCH(req: NextRequest) {
       data: {
         ...(validated.title !== undefined && { title: validated.title }),
         ...(validated.description !== undefined && { description: validated.description }),
-        ...(validated.status !== undefined && { status: validated.status, ...(validated.status === "COMPLETED" ? { completedAt: new Date() } : {}) }),
+        ...(validated.status !== undefined && { status: validated.status }),
         ...(validated.priority !== undefined && { priority: validated.priority }),
         ...(validated.dueDate !== undefined && { dueDate: validated.dueDate }),
         ...(validated.assignedTo !== undefined && { assignedTo: { connect: { id: validated.assignedTo } } }),
@@ -133,7 +116,7 @@ export async function PATCH(req: NextRequest) {
         assignedTo: true,
         team: true,
         comments: true,
-        attachments: { include: { user: { select: { name: true } } } },
+        attachments: true,
       },
     });
 
@@ -195,7 +178,7 @@ export async function DELETE(req: NextRequest) {
 
     const currentUserId = session.user.id as string;
     const currentUserRole = (session.user as { role?: string }).role;
-    if (task.createdById !== currentUserId && !["ADMIN", "MANAGER"].includes(currentUserRole ?? "")) {
+    if (task.createdById !== currentUserId && task.assignedToId !== currentUserId && !["ADMIN", "MANAGER"].includes(currentUserRole ?? "")) {
       return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
     }
 

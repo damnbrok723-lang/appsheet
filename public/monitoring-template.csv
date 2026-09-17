@@ -1,4 +1,4 @@
-Tanggal,Shift,Jumlah Operator,Gudang
-2026-09-17,PAGI,12,Gudang Utama
-2026-09-17,SIANG,10,Gudang Timur
-2026-09-17,MALAM,8,Gudang Barat
+Tanggal,Shift,Jumlah Operator,Gudang,Kepala Regu
+2026-09-17,SHIFT_1,12,1,Nama Kepala Regu
+2026-09-17,SHIFT_2,10,5,Nama Kepala Regu
+2026-09-17,SHIFT_3,8,13,Nama Kepala Regu
