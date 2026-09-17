@@ -22,10 +22,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
+const sharedMenuItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Tasks", href: "/tasks", icon: FolderKanban },
-  { name: "Team", href: "/team", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Monitoring", href: "/monitoring", icon: ClipboardCheck },
   { name: "Laporan", href: "/reports", icon: FileBarChart },
@@ -33,6 +32,20 @@ const menuItems = [
   { name: "Pengumuman", href: "/announcements", icon: Megaphone },
   { name: "Kehadiran", href: "/attendance", icon: UserCheck },
   { name: "Notifications", href: "/notifications", icon: Bell },
+];
+
+const managerMenuItems = [
+  ...sharedMenuItems.slice(0, 2),
+  { name: "Team", href: "/team", icon: Users },
+  ...sharedMenuItems.slice(2),
+];
+
+const adminMenuItems = [
+  ...managerMenuItems,
+  { name: "Admin Dashboard", href: "/dashboard/admin", icon: ShieldCheck },
+  { name: "Users", href: "/admin/users", icon: Users },
+  { name: "Departments", href: "/admin/departments", icon: ShieldCheck },
+  { name: "Teams", href: "/admin/teams", icon: Users },
   { name: "Audit Log", href: "/audit-logs", icon: ShieldCheck },
 ];
 
@@ -40,24 +53,22 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     fetch("/api/auth/session")
       .then((response) => response.ok ? response.json() : null)
       .then((session) => {
-        if (active) setIsAdmin(session?.user?.role === "ADMIN");
+        if (active) setRole(session?.user?.role ?? null);
       })
       .catch(() => {
-        if (active) setIsAdmin(false);
+        if (active) setRole(null);
       });
     return () => { active = false; };
   }, []);
 
-  const visibleMenuItems = isAdmin
-    ? [...menuItems, { name: "Admin Dashboard", href: "/dashboard/admin", icon: ShieldCheck }]
-    : menuItems;
+  const visibleMenuItems = role === "ADMIN" ? adminMenuItems : role === "MANAGER" ? managerMenuItems : sharedMenuItems;
 
   return (
     <aside className={cn("flex h-full min-h-0 flex-col border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64")}>
