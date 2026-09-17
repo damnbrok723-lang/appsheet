@@ -31,7 +31,11 @@ export function NotificationsDropdown() {
   });
   const notifications = query.data ?? [];
   const markAllRead = useMutation({
-    mutationFn: () => fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "read-all" }) }),
+    mutationFn: async () => { const response = await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "read-all" }) }); if (!response.ok) throw new Error("Unable to mark notifications as read"); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+  const markRead = useMutation({
+    mutationFn: async (id: string) => { const response = await fetch(`/api/notifications/${id}`, { method: "PATCH" }); if (!response.ok) throw new Error("Unable to mark notification as read"); },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
@@ -53,14 +57,14 @@ export function NotificationsDropdown() {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {query.isLoading ? <p className="p-4 text-sm text-muted-foreground">Loading notifications...</p> : notifications.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No notifications yet.</p> : notifications.map((notification) => (
-              <div key={notification.id} className={cn("flex items-start gap-3 p-4 hover:bg-accent/50 cursor-pointer", !notification.readAt && "bg-accent/30")}>
+              <button type="button" key={notification.id} onClick={() => !notification.readAt && markRead.mutate(notification.id)} className={cn("flex w-full items-start gap-3 p-4 text-left hover:bg-accent/50", !notification.readAt && "bg-accent/30")}>
                 <div className="flex-1">
                   <p className="text-sm font-medium">{notification.title}</p>
                   <p className="text-xs text-muted-foreground">{notification.message}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">{formatDistanceToNow(new Date(notification.createdAt))} ago</p>
                 </div>
                 {!notification.readAt && <div className="h-2 w-2 rounded-full bg-primary shrink-0" />}
-              </div>
+              </button>
             ))}
           </div>
           <div className="border-t p-2 text-center">
