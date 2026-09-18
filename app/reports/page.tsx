@@ -293,19 +293,19 @@ export default function ReportsPage() {
       const worksheet = workbook.addWorksheet("Laporan Produksi");
 
       worksheet.columns = [
-        { header: "Tanggal", key: "tanggal", width: 14 },
-        { header: "Customer", key: "customer", width: 24 },
-        { header: "Dimensi", key: "dimensi", width: 20 },
+        { header: "Tanggal Produksi", key: "tanggal", width: 16 },
+        { header: "Customer", key: "customer", width: 26 },
+        { header: "Dimensi", key: "dimensi", width: 22 },
         { header: "Jenis Pipa", key: "pipa", width: 14 },
-        { header: "Batch", key: "batch", width: 18 },
-        { header: "No NCR", key: "ncr", width: 18 },
+        { header: "Batch Pipa", key: "batch", width: 18 },
+        { header: "No. NCR", key: "ncr", width: 18 },
         { header: "Jenis Operator", key: "jenisOperator", width: 18 },
-        { header: "Operator", key: "operator", width: 22 },
+        { header: "Nama Penanggung Jawab Repair", key: "operator", width: 24 },
         { header: "Shift", key: "shift", width: 16 },
-        { header: "Qty OK", key: "ok", width: 12 },
-        { header: "Qty NG", key: "ng", width: 12 },
-        { header: "Keterangan NG", key: "ngNotes", width: 24 },
-        { header: "Keterangan Proses", key: "processNotes", width: 24 },
+        { header: "Qty Standard (OK)", key: "ok", width: 16 },
+        { header: "Qty NG/REPAIR", key: "ng", width: 16 },
+        { header: "Keterangan Rep/NG", key: "ngNotes", width: 24 },
+        { header: "Kategori Repair", key: "processNotes", width: 24 },
         { header: "Foto Dokumentasi", key: "foto", width: 22 },
       ];
 
@@ -422,10 +422,12 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Laporan Produksi</h1>
-        <p className="text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p>
-      </div>
+      {/* SCREEN ONLY CONTENT */}
+      <div className="print:hidden space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Laporan Produksi</h1>
+          <p className="text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p>
+        </div>
 
       {/* FORM INPUT LAPORAN */}
       <Card>
@@ -732,7 +734,7 @@ export default function ReportsPage() {
             <div className="flex flex-wrap gap-2">
               {isReviewer && (
                 <>
-                  <a href="/laporan-produksi-template.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent">
+                  <a href="/Control Daily Repair by SAP.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent">
                     Download Template
                   </a>
                   <input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} />
@@ -972,6 +974,69 @@ export default function ReportsPage() {
           )}
         </CardContent>
       </Card>
+      </div>
+
+      {/* DOKUMEN CETAK / EXPORT PDF KHUSUS PRINT */}
+      <div className="hidden print:block print:space-y-6 bg-white text-black p-4">
+        <div className="border-b pb-4 text-center">
+          <h1 className="text-2xl font-bold uppercase tracking-wide">Laporan Hasil Produksi & Daily Repair</h1>
+          <p className="text-xs text-gray-600 mt-1">
+            Periode: {filterFrom || "Semua Data"} s/d {filterTo || "Hari Ini"} · Tanggal Cetak: {new Date().toLocaleDateString("id-ID")}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm font-semibold">
+          <div className="rounded border border-emerald-300 bg-emerald-50 p-3">Total Qty OK: {totalOk.toLocaleString("id-ID")} pcs</div>
+          <div className="rounded border border-rose-300 bg-rose-50 p-3">Total Qty NG: {totalNg.toLocaleString("id-ID")} pcs</div>
+        </div>
+
+        <table className="w-full border-collapse border border-gray-300 text-xs">
+          <thead>
+            <tr className="bg-gray-100 font-bold">
+              <th className="border p-2">Tanggal</th>
+              <th className="border p-2">Customer</th>
+              <th className="border p-2">Dimensi</th>
+              <th className="border p-2">Batch</th>
+              <th className="border p-2">No. NCR</th>
+              <th className="border p-2">Operator</th>
+              <th className="border p-2">Shift</th>
+              <th className="border p-2">Qty OK</th>
+              <th className="border p-2">Qty NG</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredReports.map((r) => (
+              <tr key={r.id}>
+                <td className="border p-2 text-center">{r.reportDate.slice(0, 10)}</td>
+                <td className="border p-2">{r.customer}</td>
+                <td className="border p-2">{r.dimensions}</td>
+                <td className="border p-2">{r.batchNumber}</td>
+                <td className="border p-2">{r.ncrNumber || "-"}</td>
+                <td className="border p-2">{r.operatorName}</td>
+                <td className="border p-2 text-center">{formatShift(r.shift)}</td>
+                <td className="border p-2 text-center font-bold text-emerald-700">{r.qtyOk}</td>
+                <td className="border p-2 text-center font-bold text-rose-700">{r.qtyNg}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* SECTION FOTO DOKUMENTASI UNTUK PDF */}
+        {filteredReports.some((r) => r.photoData) && (
+          <div className="pt-6 page-break-before">
+            <h2 className="mb-4 border-b pb-2 text-base font-bold uppercase">Dokumentasi Foto Lapangan</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {filteredReports.filter((r) => r.photoData).map((r) => (
+                <div key={r.id} className="rounded border p-3 text-center">
+                  <img src={r.photoData!} alt={r.customer} className="mx-auto max-h-48 rounded object-contain mb-2" />
+                  <p className="font-semibold text-xs">{r.customer} ({r.batchNumber})</p>
+                  <p className="text-[10px] text-gray-500">{r.reportDate.slice(0, 10)} · {formatShift(r.shift)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* MODAL POPUP PREVIEW FOTO LANGSUNG DI HALAMAN INI */}
       {previewPhoto && (

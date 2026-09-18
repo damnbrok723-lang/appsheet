@@ -110,7 +110,7 @@ async function importReports(request: Request, userId: string) {
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
   // Cari sheet yang tepat: utamakan sheet laporan produksi atau repair (JANGAN pilih sheet MP Repair karena itu monitoring)
   const sheetName =
-    workbook.SheetNames.find((name) => ["laporan produksi", "laporan", "production report", "production", "data repair"].includes(name.trim().toLowerCase())) ??
+    workbook.SheetNames.find((name) => ["output repair", "laporan produksi", "laporan", "production report", "production", "data repair"].includes(name.trim().toLowerCase())) ??
     workbook.SheetNames.find((name) => name.trim().toLowerCase() === "repair") ??
     workbook.SheetNames.find((name) => {
       const lower = name.trim().toLowerCase();
@@ -127,23 +127,29 @@ async function importReports(request: Request, userId: string) {
     .filter((row) => Object.values(row).some((val) => textValue(val) !== ""))
     .map((row, index) => {
       const normalized = Object.fromEntries(Object.entries(row).map(([key, value]) => [normalizeHeader(key), value]));
-      const rawDate = normalized.tanggal || normalized.tanggalproduksi || normalized.postdate || normalized.entrydate || normalized.docdate;
+      const rawDate = normalized.tanggalproduksi || normalized.tanggal || normalized.postdate || normalized.entrydate || normalized.docdate;
       const reportDate = parseDateValue(rawDate);
       const customer = textValue(normalized.customer || normalized.pelanggan || normalized.name || "Customer Umum");
-      const dimensions = textValue(normalized.dimensi || normalized.panjangpipa || normalized.lengthside || "100 x 50 x 3 mm");
-      const pipeTypes = parsePipeTypes(normalized.jenispipa || normalized.pipa);
-      const batchNumber = textValue(normalized.batch || normalized.batchnumber || normalized.nomorbatch || `B-${reportDate.toISOString().slice(0, 10)}-${index + 1}`);
+      
+      let dimensions = textValue(normalized.dimensi || normalized.lokasipipa || normalized.panjangpipa || normalized.lengthside);
+      if (!dimensions && (normalized.diameter || normalized.length)) {
+        dimensions = `${textValue(normalized.diameter) || "-"} x ${textValue(normalized.wallthickness) || "-"} x ${textValue(normalized.length) || "-"}`;
+      }
+      if (!dimensions) dimensions = "100 x 50 x 3 mm";
+
+      const pipeTypes = parsePipeTypes(normalized.jenispipa || normalized.pipa || normalized.subkategori || normalized.kategori || normalized.material);
+      const batchNumber = textValue(normalized.batchpipa || normalized.batch || normalized.batchnumber || normalized.nomorbatch || `B-${reportDate.toISOString().slice(0, 10)}-${index + 1}`);
       const operatorTypes = parseOperatorTypes(normalized.jenisoperator || normalized.tipeoperator);
-      const operatorName = textValue(normalized.namaoperator || normalized.operator || normalized.username || "Operator");
-      const shift = shiftValue(normalized.shift);
-      const qtyOk = Math.max(0, Number(normalized.qtyok || normalized.ok || normalized.grqtypcs || 0) || 0);
-      const qtyNg = Math.max(0, Number(normalized.qtyng || normalized.ng || normalized.giqtypcs || 0) || 0);
-      let ncrNumber = textValue(normalized.noncr || normalized.ncrnumber);
+      const operatorName = textValue(normalized.namapenanggungjawabrepair || normalized.namaoperator || normalized.operator || normalized.userentry || normalized.username || "Operator");
+      const shift = shiftValue(normalized.shift || normalized.sloc || normalized.gudang);
+      const qtyOk = Math.max(0, Number(normalized.qtystardardok || normalized.qtyok || normalized.ok || normalized.grqtypcs || 0) || 0);
+      const qtyNg = Math.max(0, Number(normalized.qtyngrepair || normalized.qtyng || normalized.ng || normalized.giqtypcs || normalized.qtyrepairst || 0) || 0);
+      let ncrNumber = textValue(normalized.noncr || normalized.ncrnumber || normalized.noncr);
       if (qtyNg > 0 && !ncrNumber) {
         ncrNumber = `NCR-${batchNumber}`;
       }
-      const ngNotes = textValue(normalized.keteranganng || normalized.remark);
-      const processNotes = textValue(normalized.keteranganproses);
+      const ngNotes = textValue(normalized.keteranganrepng || normalized.keteranganng || normalized.remark);
+      const processNotes = textValue(normalized.kategorirepair || normalized.keteranganproses || normalized.subkategori);
 
       const data = {
         reportDate,

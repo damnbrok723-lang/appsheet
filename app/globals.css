@@ -69,3 +69,22 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
+
+@media print {
+  aside, header, nav, .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  .page-break-before {
+    page-break-before: always;
+  }
+}
