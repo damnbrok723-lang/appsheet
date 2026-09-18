@@ -110,8 +110,12 @@ export default function ReportsPage() {
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // filterFrom/filterTo = filter AKTIF yang benar-benar diterapkan ke data
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  // pendingFrom/pendingTo = nilai input sementara (belum diterapkan)
+  const [pendingFrom, setPendingFrom] = useState("");
+  const [pendingTo, setPendingTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; date: string; batch: string; shift: string } | null>(null);
@@ -126,10 +130,20 @@ export default function ReportsPage() {
   const showExportCard = useCardPermission("reports_export", userRole);
   const showReviewerActions = useCardPermission("reports_reviewer_actions", userRole);
 
+  // Terapkan filter dari pending ke aktif
+  function applyFilter() {
+    setFilterFrom(pendingFrom);
+    setFilterTo(pendingTo);
+    setCurrentPage(1);
+  }
+
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
   }, [filterFrom, filterTo]);
+
+  // Cek apakah ada perubahan pending yang belum diterapkan
+  const hasPendingChange = pendingFrom !== filterFrom || pendingTo !== filterTo;
 
   // Close photo modal on Escape key
   useEffect(() => {
@@ -162,6 +176,7 @@ export default function ReportsPage() {
 
   const importMutation = useMutation({
     mutationFn: async (file: File) => {
+      toast.loading("Mengimpor file Excel... Harap tunggu.", { id: "import-progress" });
       const body = new FormData();
       body.append("file", file);
       const response = await fetch("/api/production-reports", { method: "POST", body });
@@ -170,12 +185,15 @@ export default function ReportsPage() {
       return result.data.imported as number;
     },
     onSuccess: async (count) => {
-      toast.success(`${count} laporan berhasil diimpor`);
+      toast.loading("Memuat ulang data...", { id: "import-progress" });
       await queryClient.invalidateQueries({ queryKey: ["production-reports"] });
       await queryClient.refetchQueries({ queryKey: ["production-reports"] });
       setCurrentPage(1);
+      toast.success(`✅ ${count} laporan berhasil diimpor & dimuat!`, { id: "import-progress", duration: 4000 });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => {
+      toast.error(`❌ ${error.message}`, { id: "import-progress" });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -277,23 +295,32 @@ export default function ReportsPage() {
     if (preset === "all") {
       setFilterFrom("");
       setFilterTo("");
+      setPendingFrom("");
+      setPendingTo("");
       return;
     }
     if (preset === "today") {
       setFilterFrom(todayStr);
       setFilterTo(todayStr);
+      setPendingFrom(todayStr);
+      setPendingTo(todayStr);
       return;
     }
     if (preset === "month") {
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
       setFilterFrom(firstDay);
       setFilterTo(todayStr);
+      setPendingFrom(firstDay);
+      setPendingTo(todayStr);
       return;
     }
     const fromDate = new Date();
     fromDate.setDate(today.getDate() - preset);
-    setFilterFrom(fromDate.toISOString().slice(0, 10));
+    const fromStr = fromDate.toISOString().slice(0, 10);
+    setFilterFrom(fromStr);
     setFilterTo(todayStr);
+    setPendingFrom(fromStr);
+    setPendingTo(todayStr);
   }
 
   const allReports = reportsQuery.data ?? [];
@@ -442,6 +469,28 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* IMPORT LOADING OVERLAY */}
+      {importMutation.isPending && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-2xl border bg-background p-8 shadow-2xl">
+            {/* Spinner */}
+            <svg
+              className="h-12 w-12 animate-spin text-primary"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            <div className="text-center">
+              <p className="text-base font-semibold text-foreground">Mengimpor data Excel...</p>
+              <p className="mt-1 text-sm text-muted-foreground">Harap tunggu, jangan tutup halaman ini.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SCREEN ONLY CONTENT */}
       <div className="print:hidden space-y-4 md:space-y-6">
         <div>
@@ -626,9 +675,10 @@ export default function ReportsPage() {
       )}
 
       {/* FILTER TANGGAL */}
-      <Card>
+      <Card className={hasPendingChange ? "ring-2 ring-primary/40" : ""}>
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-3">
+            {/* Header row: label + status badge */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 font-semibold text-sm">
                 <Filter className="h-4 w-4 text-primary" />
@@ -639,19 +689,24 @@ export default function ReportsPage() {
                   {filteredReports.length} dari {allReports.length} data
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">
-                  Semua: {allReports.length} data
+                <span className="text-xs text-muted-foreground">Semua: {allReports.length} data</span>
+              )}
+              {hasPendingChange && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 animate-pulse">
+                  Belum diterapkan
                 </span>
               )}
             </div>
+
+            {/* Date range inputs */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex min-w-0 items-center gap-1.5">
                 <span className="shrink-0 text-xs text-muted-foreground">Dari:</span>
                 <Input
                   type="date"
                   className="h-8 min-w-0 max-w-[9rem] flex-1 text-xs"
-                  value={filterFrom}
-                  onChange={(e) => setFilterFrom(e.target.value)}
+                  value={pendingFrom}
+                  onChange={(e) => setPendingFrom(e.target.value)}
                 />
               </div>
               <div className="flex min-w-0 items-center gap-1.5">
@@ -659,12 +714,24 @@ export default function ReportsPage() {
                 <Input
                   type="date"
                   className="h-8 min-w-0 max-w-[9rem] flex-1 text-xs"
-                  value={filterTo}
-                  onChange={(e) => setFilterTo(e.target.value)}
+                  value={pendingTo}
+                  onChange={(e) => setPendingTo(e.target.value)}
                 />
               </div>
+              {/* Terapkan button — prominent when there's a pending change */}
+              <Button
+                type="button"
+                size="sm"
+                className={"h-8 px-3 text-xs font-semibold transition-all " + (hasPendingChange ? "bg-primary text-white shadow-md scale-[1.03]" : "bg-primary/80 text-white")}
+                onClick={applyFilter}
+              >
+                Terapkan
+              </Button>
             </div>
+
+            {/* Quick preset buttons */}
             <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[10px] text-muted-foreground mr-1">Cepat:</span>
               <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setQuickFilter("today")}>
                 Hari Ini
               </Button>
