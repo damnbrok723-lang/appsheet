@@ -132,7 +132,7 @@ export async function POST(request: Request) {
         const batch = textValue(row.batch || `STOCK-${index + 1}`);
         const qtyNg = Math.max(0, Math.round(numberValue(row.unrestrictedpcs)));
         return {
-          sourceKey: stableKey(["STOCK", row.sloc, row.materialnumber, batch, row.customer, row.stlt, row.grade, row.diamm, row.tebal, row.panjang]),
+          sourceKey: stableKey(["STOCK", row.sloc, row.materialnumber, batch]),
           reportDate: parseDateValue(row.requesteddelivdate),
           customer: textValue(row.customer) || "Customer Umum",
           dimensions: `${textValue(row.diammm || "-")} x ${textValue(row.tebal || "-")} x ${textValue(row.panjang || "-")}`,
