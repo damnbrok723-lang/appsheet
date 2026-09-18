@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Activity,
   Download,
+  FileSpreadsheet,
   Upload,
 } from "lucide-react";
 
@@ -173,6 +174,12 @@ export default function DashboardPage() {
               <Download className="mr-1.5 h-3.5 w-3.5" />
               Export SAP
             </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="h-8 text-xs font-medium">
+            <a href="/Control Daily Repair by SAP.xlsx" download>
+              <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+              Template SAP
+            </a>
           </Button>
           <Button
             variant="outline"
