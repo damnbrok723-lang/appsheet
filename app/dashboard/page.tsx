@@ -131,7 +131,7 @@ export default function DashboardPage() {
           result.push({
             id: `${key}-${wh}-${sh}`,
             dateLabel,
-            groupKey: `${wh} (${sh})`,
+            groupKey: `${dateLabel} - ${wh} (${sh})`,
             gudang: wh,
             shift: sh,
             Total: shifts[sh],
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                 <BarChart
                   data={chartData}
                   layout="vertical"
-                  margin={{ top: 10, right: 35, left: 70, bottom: 10 }}
+                  margin={{ top: 10, right: 35, left: 155, bottom: 10 }}
                   barSize={18}
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
@@ -306,12 +306,12 @@ export default function DashboardPage() {
                   <YAxis
                     dataKey="groupKey"
                     type="category"
-                    tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }}
-                    width={70}
+                    tick={{ fontSize: 10, fill: "#475569", fontWeight: 600 }}
+                    width={150}
                   />
                   <Tooltip
                     formatter={(value: any) => [`${value} Orang`, "Total Operator"]}
-                    labelFormatter={(label: any) => `Shift & Gudang: ${label}`}
+                    labelFormatter={(label: any) => `Tanggal - Gudang - Shift: ${label}`}
                   />
                   <Bar dataKey="Total" radius={[0, 4, 4, 0]}>
                     {chartData.map((entry, index) => (
