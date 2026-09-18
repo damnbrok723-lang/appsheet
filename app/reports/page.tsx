@@ -99,7 +99,7 @@ export default function ReportsPage() {
   const queryClient = useQueryClient();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 60_000 });
+  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0 });
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 10 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -136,11 +136,12 @@ export default function ReportsPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Gagal menyimpan laporan");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success(editingId ? "Laporan berhasil diperbarui" : "Laporan berhasil disimpan");
       setEditingId(null);
       setForm({ ...initialForm, reportDate: form.reportDate });
-      queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.refetchQueries({ queryKey: ["production-reports"] });
     },
     onError: (error) => toast.error(error.message),
   });
@@ -154,9 +155,11 @@ export default function ReportsPage() {
       if (!response.ok) throw new Error(result.message || "Gagal mengimpor file");
       return result.data.imported as number;
     },
-    onSuccess: (count) => {
+    onSuccess: async (count) => {
       toast.success(`${count} laporan berhasil diimpor`);
-      queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.refetchQueries({ queryKey: ["production-reports"] });
+      setCurrentPage(1);
     },
     onError: (error) => toast.error(error.message),
   });
@@ -167,9 +170,10 @@ export default function ReportsPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Gagal menghapus laporan");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Laporan dihapus");
-      queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.refetchQueries({ queryKey: ["production-reports"] });
     },
     onError: (error) => toast.error(error.message),
   });
@@ -181,11 +185,12 @@ export default function ReportsPage() {
       if (!response.ok) throw new Error(result.message || "Gagal menghapus semua laporan");
       return result.data.deleted as number;
     },
-    onSuccess: (count) => {
+    onSuccess: async (count) => {
       toast.success(`${count} laporan berhasil dihapus`);
-      queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+      await queryClient.refetchQueries({ queryKey: ["production-reports"] });
+      setCurrentPage(1);
     },
-    onError: (error) => toast.error(error.message),
   });
 
   function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -242,7 +247,8 @@ export default function ReportsPage() {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || "Gagal mengubah status");
-    queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+    await queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+    await queryClient.refetchQueries({ queryKey: ["production-reports"] });
     toast.success("Status laporan diperbarui");
   }
 

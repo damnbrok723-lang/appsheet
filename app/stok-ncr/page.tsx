@@ -72,7 +72,7 @@ export default function StokNcrPage() {
       if (!res.ok) throw new Error("Gagal memuat data NCR");
       return (await res.json()).data.reports as Report[];
     },
-    staleTime: 60_000,
+    staleTime: 0,
   });
 
   useEffect(() => {
