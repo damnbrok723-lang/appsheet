@@ -161,9 +161,7 @@ export default function OutputRepairPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("sheetHint", "repair"); // Ambil sheet "Repair" dari SAP file
-
-      const res = await fetch("/api/production-reports", {
+      const res = await fetch("/api/control-daily-repair", {
         method: "POST",
         body: formData,
       });
@@ -173,7 +171,7 @@ export default function OutputRepairPage() {
         throw new Error(data.message || "Gagal mengimpor file Output Repair");
       }
 
-      toast.success(`Berhasil mengimpor ${data.data?.imported ?? 0} data Output Repair!`, { id: "import-repair" });
+      toast.success(`Berhasil mengimpor ${data.data?.repairImported ?? 0} data Output Repair!`, { id: "import-repair" });
       queryClient.invalidateQueries({ queryKey: ["output-repair-reports"] });
     } catch (err: any) {
       toast.error(err.message || "Gagal mengimpor file", { id: "import-repair" });

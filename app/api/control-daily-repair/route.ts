@@ -106,9 +106,16 @@ export async function POST(request: Request) {
     if (file.size > 20 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 20 MB" }, { status: 400 });
 
     const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-    const stockSheet = workbook.Sheets[findSheet(workbook, ["stok grade c", "stok grade", "stok ncr"]) ?? ""];
-    const repairSheet = workbook.Sheets[findSheet(workbook, ["repair", "output repair"]) ?? ""];
-    const manpowerSheet = workbook.Sheets[findSheet(workbook, ["mp repair", "mprepair", "monitoring"]) ?? ""];
+    let stockSheet = workbook.Sheets[findSheet(workbook, ["stok grade c", "stok grade", "stok ncr"]) ?? ""];
+    let repairSheet = workbook.Sheets[findSheet(workbook, ["repair", "output repair"]) ?? ""];
+    let manpowerSheet = workbook.Sheets[findSheet(workbook, ["mp repair", "mprepair", "monitoring"]) ?? ""];
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0] ?? ""];
+    const firstRows = firstSheet ? rowValues(firstSheet) : [];
+    if (firstRows.length && !stockSheet && !repairSheet && !manpowerSheet) {
+      if (firstRows.some((row) => "unrestrictedpcs" in row || "unrestrictedkg" in row)) stockSheet = firstSheet;
+      else if (firstRows.some((row) => "qtypcs" in row || "tonasekg" in row)) repairSheet = firstSheet;
+      else if (firstRows.some((row) => "jumlahoperator" in row || "operatorcount" in row)) manpowerSheet = firstSheet;
+    }
 
     if (!stockSheet && !repairSheet && !manpowerSheet) {
       return Response.json({ success: false, message: "Sheet Stok Grade C, Repair, atau MP repair tidak ditemukan" }, { status: 400 });

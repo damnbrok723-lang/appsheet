@@ -71,11 +71,11 @@ export default function MonitoringPage() {
     try {
       const body = new FormData();
       body.append("file", file);
-      const res = await fetch("/api/monitoring", { method: "POST", body });
+      const res = await fetch("/api/control-daily-repair", { method: "POST", body });
       const result = await res.json();
       if (!res.ok || !result.success) throw new Error(result.message || "Gagal mengimpor file");
 
-      toast.success(`${result.data?.imported ?? 0} data monitoring berhasil diimpor!`, { id: "import-mon" });
+      toast.success(`${result.data?.manpowerImported ?? 0} data monitoring berhasil diimpor!`, { id: "import-mon" });
       queryClient.invalidateQueries({ queryKey: ["monitoring"] });
     } catch (err: any) {
       toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-mon" });

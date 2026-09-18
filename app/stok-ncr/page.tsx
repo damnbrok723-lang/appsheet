@@ -85,9 +85,7 @@ export default function StokNcrPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("sheetHint", "stok grade c"); // Ambil sheet "Stok Grade C" dari SAP file
-
-      const res = await fetch("/api/production-reports", {
+      const res = await fetch("/api/control-daily-repair", {
         method: "POST",
         body: formData,
       });
@@ -98,7 +96,7 @@ export default function StokNcrPage() {
         throw new Error(data.message || "Gagal mengimpor file Excel / CSV");
       }
 
-      toast.success(`Berhasil mengimpor ${data.data?.imported ?? 0} data Stok NCR!`, { id: "import-ncr" });
+      toast.success(`Berhasil mengimpor ${data.data?.stockImported ?? 0} data Stok NCR!`, { id: "import-ncr" });
       queryClient.invalidateQueries({ queryKey: ["production-reports"] });
     } catch (err: any) {
       toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-ncr" });
