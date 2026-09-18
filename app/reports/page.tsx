@@ -441,12 +441,12 @@ export default function ReportsPage() {
   }, [filteredReports, currentPage, pageSize]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* SCREEN ONLY CONTENT */}
-      <div className="print:hidden space-y-6">
+      <div className="print:hidden space-y-4 md:space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Laporan Produksi</h1>
-          <p className="text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Laporan Produksi</h1>
+          <p className="text-sm text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p>
         </div>
 
       {/* FORM INPUT LAPORAN */}
@@ -627,12 +627,12 @@ export default function ReportsPage() {
 
       {/* FILTER TANGGAL */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 font-semibold text-sm">
                 <Filter className="h-4 w-4 text-primary" />
-                <span>Filter Tanggal Laporan & Grafik:</span>
+                <span>Filter Tanggal:</span>
               </div>
               {(filterFrom || filterTo) ? (
                 <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
@@ -640,45 +640,45 @@ export default function ReportsPage() {
                 </span>
               ) : (
                 <span className="text-xs text-muted-foreground">
-                  (Semua data ditampilkan: {allReports.length})
+                  Semua: {allReports.length} data
                 </span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Dari:</span>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="shrink-0 text-xs text-muted-foreground">Dari:</span>
                 <Input
                   type="date"
-                  className="h-8 w-36 text-xs"
+                  className="h-8 min-w-0 max-w-[9rem] flex-1 text-xs"
                   value={filterFrom}
                   onChange={(e) => setFilterFrom(e.target.value)}
                 />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Sampai:</span>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="shrink-0 text-xs text-muted-foreground">s/d:</span>
                 <Input
                   type="date"
-                  className="h-8 w-36 text-xs"
+                  className="h-8 min-w-0 max-w-[9rem] flex-1 text-xs"
                   value={filterTo}
                   onChange={(e) => setFilterTo(e.target.value)}
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <Button type="button" variant="outline" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setQuickFilter("today")}>
-                  Hari Ini
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setQuickFilter("today")}>
+                Hari Ini
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setQuickFilter(7)}>
+                7 Hari
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setQuickFilter("month")}>
+                Bulan Ini
+              </Button>
+              {(filterFrom || filterTo) && (
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10" onClick={() => setQuickFilter("all")}>
+                  Reset
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setQuickFilter(7)}>
-                  7 Hari
-                </Button>
-                <Button type="button" variant="outline" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setQuickFilter("month")}>
-                  Bulan Ini
-                </Button>
-                {(filterFrom || filterTo) && (
-                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:bg-destructive/10" onClick={() => setQuickFilter("all")}>
-                    Reset
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -757,9 +757,9 @@ export default function ReportsPage() {
       {/* LAPORAN TERSIMPAN */}
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <h2 className="flex items-center gap-2 text-base font-semibold md:text-lg">
                 <FileBarChart className="h-5 w-5" />
                 Laporan Tersimpan
               </h2>
@@ -772,28 +772,29 @@ export default function ReportsPage() {
             <div className="flex flex-wrap gap-2">
               {isReviewer && (
                 <>
-                  <a href="/Control Daily Repair by SAP.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent">
-                    Download Template
+                  <a href="/Control Daily Repair by SAP.xlsx" download className="inline-flex h-8 items-center rounded-md border px-2.5 text-xs font-medium hover:bg-accent">
+                    Template
                   </a>
                   <input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} />
-                  <Button type="button" variant="outline" size="sm" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>
+                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>
                     {importMutation.isPending ? "Mengimpor..." : "Import Excel"}
                   </Button>
                 </>
               )}
-              <Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!filteredReports.length}>
-                <Download className="mr-2 h-4 w-4" />
-                Export Excel
+              <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={exportCsv} disabled={!filteredReports.length}>
+                <Download className="mr-1 h-3.5 w-3.5" />
+                Export
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!filteredReports.length}>
-                <Printer className="mr-2 h-4 w-4" />
-                Export PDF
+              <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => window.print()} disabled={!filteredReports.length}>
+                <Printer className="mr-1 h-3.5 w-3.5" />
+                PDF
               </Button>
               {currentUser?.role === "ADMIN" && allReports.length > 0 && (
                 <Button
                   type="button"
                   variant="destructive"
                   size="sm"
+                  className="h-8 text-xs"
                   disabled={deleteAllMutation.isPending}
                   onClick={() => {
                     if (window.confirm(`Yakin hapus SEMUA ${allReports.length} laporan? Tindakan ini tidak bisa dibatalkan.`)) {
@@ -816,9 +817,9 @@ export default function ReportsPage() {
               const canDelete = currentUser?.role === "ADMIN" || (report.userId === currentUser?.id && report.status === "DRAFT");
 
               return (
-                <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-                  {/* DETAIL DAN FOTO THUMBNAIL LANGSUNG DI DAFTAR */}
-                  <div className="flex items-center gap-3">
+                <div key={report.id} className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  {/* DETAIL DAN FOTO THUMBNAIL */}
+                  <div className="flex items-start gap-3">
                     {(report.photoData || (report as Report & { hasPhoto?: boolean }).hasPhoto) ? (
                       <button
                         type="button"
@@ -854,7 +855,7 @@ export default function ReportsPage() {
                             }
                           }
                         }}
-                        className="group relative h-12 w-12 flex-shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-muted transition hover:ring-2 hover:ring-primary focus:outline-none"
+                        className="group relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-muted transition hover:ring-2 hover:ring-primary focus:outline-none"
                         title="Klik untuk cek foto langsung"
                       >
                         {report.photoData ? (
@@ -870,15 +871,15 @@ export default function ReportsPage() {
                       </button>
                     ) : (
                       <div
-                        className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md border border-dashed bg-muted/30 text-muted-foreground/40"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed bg-muted/30 text-muted-foreground/40"
                         title="Tidak ada lampiran foto"
                       >
                         <Camera className="h-5 w-5" />
                       </div>
                     )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Link href={`/reports/${report.id}`} className="font-semibold text-foreground hover:underline">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link href={`/reports/${report.id}`} className="font-semibold text-foreground hover:underline truncate max-w-[180px] sm:max-w-none">
                           {report.customer}
                         </Link>
                         {report.photoData && (
@@ -895,56 +896,56 @@ export default function ReportsPage() {
                             }
                             className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/20"
                           >
-                            <Camera className="h-3 w-3" /> Cek Foto
+                            <Camera className="h-3 w-3" /> Foto
                           </button>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {new Date(report.reportDate).toLocaleDateString("id-ID")} · {report.dimensions} · {report.batchNumber}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        OK <span className="font-semibold text-emerald-600">{report.qtyOk}</span> · NG <span className="font-semibold text-rose-600">{report.qtyNg}</span> · {report.operatorName} · {formatShift(report.shift)} ·{" "}
+                        <span className={"font-semibold " + (report.status === "APPROVED" ? "text-emerald-600" : report.status === "REJECTED" ? "text-rose-600" : "text-foreground")}>
+                          {report.status}
+                        </span>
                       </p>
                     </div>
                   </div>
 
-                  {/* AKSI DAN STATUS */}
-                  <div className="flex items-center gap-2 text-right">
-                    <div>
-                      <p className="font-medium">OK {report.qtyOk} · NG {report.qtyNg}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {report.operatorName} · {formatShift(report.shift)} · Status: <span className="font-semibold">{report.status}</span>
-                      </p>
-                    </div>
-                    <Button asChild variant="outline" size="sm">
+                  {/* AKSI — wraps on mobile, inline on sm+ */}
+                  <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0 sm:flex-nowrap">
+                    <Button asChild variant="outline" size="sm" className="h-7 px-2 text-xs">
                       <Link href={`/reports/${report.id}`}>
-                        <Eye className="mr-1 h-4 w-4" />
+                        <Eye className="mr-1 h-3.5 w-3.5" />
                         Detail
                       </Link>
                     </Button>
                     {canEdit && (
-                      <Button type="button" variant="outline" size="sm" onClick={() => editReport(report)}>
-                        <Pencil className="mr-1 h-4 w-4" />
+                      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => editReport(report)}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
                         Edit
                       </Button>
                     )}
                     {canDelete && (
-                      <Button type="button" variant="destructive" size="sm" onClick={() => deleteMutation.mutate(report.id)} disabled={deleteMutation.isPending}>
-                        <Trash2 className="mr-1 h-4 w-4" />
+                      <Button type="button" variant="destructive" size="sm" className="h-7 px-2 text-xs" onClick={() => deleteMutation.mutate(report.id)} disabled={deleteMutation.isPending}>
+                        <Trash2 className="mr-1 h-3.5 w-3.5" />
                         Hapus
                       </Button>
                     )}
                     {canSubmit && (
-                      <Button type="button" size="sm" onClick={() => changeStatus(report.id, "SUBMITTED")}>
+                      <Button type="button" size="sm" className="h-7 px-2 text-xs" onClick={() => changeStatus(report.id, "SUBMITTED")}>
                         Kirim
                       </Button>
                     )}
                     {isReviewer && report.status === "SUBMITTED" && (
                       <>
-                        <Button type="button" size="sm" onClick={() => changeStatus(report.id, "APPROVED")}>
+                        <Button type="button" size="sm" className="h-7 px-2 text-xs" onClick={() => changeStatus(report.id, "APPROVED")}>
                           Approve
                         </Button>
-                        <Button type="button" size="sm" variant="outline" onClick={() => changeStatus(report.id, "REVISION")}>
+                        <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => changeStatus(report.id, "REVISION")}>
                           Revisi
                         </Button>
-                        <Button type="button" size="sm" variant="destructive" onClick={() => changeStatus(report.id, "REJECTED")}>
+                        <Button type="button" size="sm" variant="destructive" className="h-7 px-2 text-xs" onClick={() => changeStatus(report.id, "REJECTED")}>
                           Tolak
                         </Button>
                       </>

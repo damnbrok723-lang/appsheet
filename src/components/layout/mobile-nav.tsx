@@ -17,21 +17,43 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-[env(safe-area-inset-bottom)] md:hidden">
-      <div className="flex items-center justify-around py-1">
+    <nav
+      aria-label="Navigasi utama mobile"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/97 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="flex items-center justify-around px-1 py-1">
         {mobileItems.map((item) => {
-          const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/dashboard" && pathname.startsWith(item.href)) ||
+            (item.href === "/dashboard" && pathname === "/");
+
           return (
             <Link
               key={item.name}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors",
-                isActive ? "text-primary font-bold" : "text-muted-foreground"
+                "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-medium transition-all duration-150",
+                isActive
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
+              {/* Active pill indicator */}
+              {isActive && (
+                <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-primary" />
+              )}
+              <item.icon
+                className={cn(
+                  "h-5 w-5 shrink-0 transition-transform duration-150",
+                  isActive && "scale-110"
+                )}
+              />
+              <span className="truncate w-full text-center leading-tight">
+                {item.name}
+              </span>
             </Link>
           );
         })}

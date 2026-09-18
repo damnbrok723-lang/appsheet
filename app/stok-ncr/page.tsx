@@ -265,11 +265,11 @@ export default function StokNcrPage() {
       {/* SCREEN VIEW */}
       <div className="print:hidden space-y-6">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-rose-700 dark:text-rose-400">
-            <ShieldAlert className="h-8 w-8" />
-            Pemantauan Stok NCR & Grade C
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-rose-700 dark:text-rose-400 md:text-3xl">
+            <ShieldAlert className="h-6 w-6 md:h-8 md:w-8" />
+            Stok NCR &amp; Grade C
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Daftar stok pipa defect, Non-Conformance Report (NCR), serta catatan cacat per customer.
           </p>
         </div>
@@ -382,39 +382,43 @@ export default function StokNcrPage() {
         {/* DAFTAR STOK NCR & TABEL DATA */}
         <Card>
           <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <h2 className="flex items-center gap-2 text-base font-bold text-foreground md:text-lg">
                   <ShieldAlert className="h-5 w-5 text-rose-600" />
                   Daftar Stok Pipa NCR / Grade C
                 </h2>
                 <p className="text-xs text-muted-foreground">Menampilkan {filteredReports.length} data stok NCR</p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                {/* Search: full-width on mobile */}
+                <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="search"
                     placeholder="Cari Customer, NCR, Batch..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-8 w-48 pl-8 text-xs"
+                    className="h-8 w-full pl-8 text-xs sm:w-44"
                   />
                 </div>
-                <div className="flex items-center gap-1 text-xs">
-                  <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-8 text-xs w-32" />
-                  <span>-</span>
-                  <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-8 text-xs w-32" />
+                {/* Date filters */}
+                <div className="flex flex-wrap items-center gap-1 text-xs">
+                  <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-8 min-w-0 max-w-[8.5rem] flex-1 text-xs" />
+                  <span className="text-muted-foreground">-</span>
+                  <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-8 min-w-0 max-w-[8.5rem] flex-1 text-xs" />
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={exportNcrExcel} disabled={!filteredReports.length} className="h-8 text-xs">
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Export Excel NCR
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!filteredReports.length} className="h-8 text-xs">
-                  <Printer className="mr-1.5 h-3.5 w-3.5" />
-                  Cetak PDF
-                </Button>
+                <div className="flex flex-wrap gap-1">
+                  <Button type="button" variant="outline" size="sm" onClick={exportNcrExcel} disabled={!filteredReports.length} className="h-8 text-xs">
+                    <Download className="mr-1 h-3.5 w-3.5" />
+                    Export
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => window.print()} disabled={!filteredReports.length} className="h-8 text-xs">
+                    <Printer className="mr-1 h-3.5 w-3.5" />
+                    PDF
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>

@@ -18,6 +18,11 @@
   --border: #d6e1ee;
   --input: #c4d2e1;
   --ring: #38bdf8;
+  /* Mobile safe areas */
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+  --safe-area-right: env(safe-area-inset-right);
 }
 
 @theme inline {
@@ -40,21 +45,50 @@
   --color-ring: var(--ring);
 }
 
+/* ──────────── RESET & BASE ──────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent horizontal scroll on all mobile devices */
+  overflow-x: hidden;
+  /* Use dynamic viewport height for mobile (accounts for browser chrome) */
+  height: 100%;
+}
+
 body {
+  overflow-x: hidden;
+  min-height: 100%;
   color: var(--foreground);
   background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 48%, #f7f3ff 100%);
   font-family: var(--font-geist-sans), ui-sans-serif, sans-serif;
+  /* Prevent text size inflation on mobile (iOS) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
+/* Prevent any element from causing horizontal overflow */
+img,
+video,
+canvas,
+svg,
+table {
+  max-width: 100%;
+}
+
+/* ──────────── SELECTION ──────────── */
 ::selection {
   color: #ffffff;
   background: #2563eb;
 }
 
-/* Custom scrollbar */
+/* ──────────── SCROLLBAR ──────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -62,14 +96,35 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
+  background: #ccd8e8;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: #9ab0c8;
 }
 
+/* ──────────── MOBILE NAV BOTTOM SAFE AREA ──────────── */
+/* Extra bottom padding on iOS (home indicator) */
+.mobile-nav-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ──────────── TABLE OVERFLOW ──────────── */
+/* Make tables scrollable horizontally on mobile */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ──────────── WORD BREAK FOR LONG TEXT ──────────── */
+.break-words-mobile {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ──────────── PRINT STYLES ──────────── */
 @media screen {
   .print-only {
     display: none !important;
@@ -83,6 +138,7 @@ body {
   body {
     background: #ffffff !important;
     color: #000000 !important;
+    overflow-x: visible;
   }
   .print-only,
   .print\:block {
@@ -94,4 +150,16 @@ body {
   .page-break-before {
     page-break-before: always;
   }
+}
+
+/* ──────────── TAP HIGHLIGHT ──────────── */
+/* Remove ugly grey tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ──────────── FOCUS STYLES (accessibility) ──────────── */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

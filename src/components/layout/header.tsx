@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Menu, Search, User as UserIcon } from "lucide-react";
+import { LogOut, Search, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown";
@@ -33,46 +33,66 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-          </Button>
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    <header className="sticky top-0 z-20 shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 min-w-0 items-center justify-between gap-2 px-3 md:h-16 md:px-6">
+        {/* LEFT: App name on mobile (since sidebar is hidden) + search on sm+ */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {/* App name visible on mobile only (md: sidebar has it) */}
+          <span className="shrink-0 text-base font-bold text-primary md:hidden">
+            OfficeHub
+          </span>
+
+          {/* Search: hidden on very small screens, shown on sm+ */}
+          <div className="relative hidden sm:block flex-1 max-w-xs lg:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
               type="search"
-              placeholder="Search..."
-              className="h-9 w-full rounded-lg border bg-transparent pl-9 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent sm:w-[300px] lg:w-[400px]"
+              placeholder="Cari..."
+              aria-label="Cari"
+              className="h-9 w-full rounded-lg border bg-transparent pl-9 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* RIGHT: notifications + user info + logout */}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <NotificationsDropdown />
 
           {user ? (
-            <div className="flex items-center gap-2 border-l pl-3">
-              <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs">
+            <div className="flex items-center gap-1.5 border-l pl-2 sm:gap-2 sm:pl-3">
+              {/* Profile link with avatar */}
+              <Link
+                href="/profile"
+                className="flex items-center gap-1.5 hover:opacity-80 transition min-w-0"
+                aria-label="Profil saya"
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:h-8 sm:w-8">
                   {user.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
                 </div>
-                <div className="hidden sm:block text-left">
-                  <p className="text-xs font-semibold leading-tight">{user.name || "User"}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">{user.role || "EMPLOYEE"}</p>
+                {/* Name + role: only on sm+ to prevent cramping */}
+                <div className="hidden sm:block text-left min-w-0">
+                  <p className="truncate text-xs font-semibold leading-tight max-w-[100px] lg:max-w-[140px]">
+                    {user.name || "User"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    {user.role || "EMPLOYEE"}
+                  </p>
                 </div>
               </Link>
 
+              {/* Logout button: icon only on mobile, icon+text on sm+ */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="h-8 px-2 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 sm:w-auto sm:px-2"
                 title="Keluar / Logout"
+                aria-label="Keluar"
               >
-                <LogOut className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Logout</span>
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-xs sm:font-semibold">
+                  Logout
+                </span>
               </Button>
             </div>
           ) : (
