@@ -135,9 +135,29 @@ export default function GrafikSapPage() {
   }
 
   async function exportWorkbook() {
+    const templateResponse = await fetch("/Control Daily Repair by SAP.xlsx");
+    if (!templateResponse.ok) {
+      toast.error("Template SAP tidak ditemukan");
+      return;
+    }
+
     const workbook = new ExcelJS.Workbook();
-    const dashboard = workbook.addWorksheet("DashBoard Repair");
-    dashboard.addRows([
+    await workbook.xlsx.load(await templateResponse.arrayBuffer());
+
+    function replaceSheetRows(sheetName: string, rows: (string | number)[][]) {
+      const worksheet = workbook.getWorksheet(sheetName);
+      if (!worksheet) return;
+      const templateRow = worksheet.getRow(2);
+      if (worksheet.rowCount > 1) worksheet.spliceRows(2, worksheet.rowCount - 1);
+      for (const values of rows) {
+        const row = worksheet.addRow(values);
+        values.forEach((_, index) => {
+          row.getCell(index + 1).style = templateRow.getCell(index + 1).style;
+        });
+      }
+    }
+
+    replaceSheetRows("DashBoard Repair", [
       ["Control Daily Repair by SAP"],
       ["Dibuat dari data grafik OfficeHub"],
       [],
@@ -147,27 +167,17 @@ export default function GrafikSapPage() {
       ["Total Output Repair (Pcs)", repairReports.reduce((sum, item) => sum + item.qtyOk + item.qtyNg, 0)],
     ]);
 
-    const pivot = workbook.addWorksheet("Pivot");
-    pivot.addRow(["Post.Date", "Sum of Qty (pcs)", "Sum of Tonase (Kg)", "Gudang"]);
-    for (const item of dailyRepairData) pivot.addRow([item.rawDate, item.output, "", ""]);
-    for (const item of stockChartData) pivot.addRow(["", "", item.gradeC + item.st, item.warehouse]);
+    replaceSheetRows("Pivot", [
+      ["Post.Date", "Sum of Qty (pcs)", "Sum of Tonase (Kg)", "Gudang"],
+      ...dailyRepairData.map((item) => [item.rawDate, item.output, "", ""]),
+      ...stockChartData.map((item) => ["", "", item.gradeC + item.st, item.warehouse]),
+    ]);
 
-    const repair = workbook.addWorksheet("Repair");
-    repair.addRow(["Plant", "Order", "Actual W.C.", "Post.Date", "NAME", "LENGTH SIDE", "WIDTH SIDE", "DIAM MM", "TEBAL", "PANJANG", "Work Centre", "Mvt", "SLOC", "BATCH", "GR Qty Pcs", "GI Qty Pcs", "GR Base Unit", "GI Base Unit", "MATERIAL NUMBER", "% GR/GI", "SETL", "Entry Date", "Trans. Loc.", "User name", "Material Doc.", "Period Pst", "Time of Entry", "Cost Centre", "Qty SETL", "LABELID", "Doc.Date", "HEAT NO.", "REMARK", "XX", "Panjang Pipa", "ST/LT", "Gudang", "Bulan", "Tonase (Kg)", "Qty (pcs)"]);
-    for (const item of repairReports) repair.addRow(["", "", "", item.reportDate.slice(0, 10), "", "", "", "", "", "", "", "", "", "", item.qtyOk + item.qtyNg, 0, "", "", "", "", "", "", "", "", "", "", "", "", 0, "", item.reportDate.slice(0, 10), "", "", "", "", item.stockType ?? "", item.warehouse ?? "", "", item.tonnageKg ?? 0, item.qtyOk + item.qtyNg]);
+    replaceSheetRows("Repair", repairReports.map((item) => ["", "", "", item.reportDate.slice(0, 10), "", "", "", "", "", "", "", "", "", "", item.qtyOk + item.qtyNg, 0, "", "", "", "", "", "", "", "", "", "", "", "", 0, "", item.reportDate.slice(0, 10), "", "", "", "", item.stockType ?? "", item.warehouse ?? "", "", item.tonnageKg ?? 0, item.qtyOk + item.qtyNg]));
 
-    const stock = workbook.addWorksheet("Stok Grade C");
-    stock.addRow(["SLOC", "Customer", "MATERIAL NUMBER", "DIAM \"", "LENGTH SIDE", "WIDTH SIDE", "DIAM MM", "TEBAL", "PANJANG", "Unrestricted Pcs", "Unrestricted Kg", "BATCH", "NOMOR SO", "ITEM SO", "Requested deliv.date", "CUST.REMARK", "Forecats Cust.", "PASM", "PASG", "BLOK STOK BOm", "XX", "Gudang", "Panjang Pipa", "ST/LT", "Grade"]);
-    for (const item of (reportsQuery.data ?? []).filter((report) => report.sourceType === "STOCK")) {
-      stock.addRow(["", "", "", "", "", "", "", "", "", item.qtyNg, item.tonnageKg ?? 0, "", "", "", "", "", "", "", "", "", "", item.warehouse ?? "", "", item.stockType ?? "", item.stockGrade ?? ""]);
-    }
+    replaceSheetRows("Stok Grade C", (reportsQuery.data ?? []).filter((report) => report.sourceType === "STOCK").map((item) => ["", "", "", "", "", "", "", "", "", item.qtyNg, item.tonnageKg ?? 0, "", "", "", "", "", "", "", "", "", "", item.warehouse ?? "", "", item.stockType ?? "", item.stockGrade ?? ""]));
 
-    const manpower = workbook.addWorksheet("MP repair");
-    manpower.addRow(["No", "Tanggal", "Jumlah Operator", "Shift", "Gudang"]);
-    for (const [index, item] of (monitoringQuery.data ?? []).entries()) manpower.addRow([index + 1, item.date.slice(0, 10), item.operatorCount, "", `Gd ${item.warehouse}`]);
-
-    workbook.addWorksheet("Sheet4").addRow(["Kode Sloc", "Gudang", "Range Coil/Strip", "Coil/Strip", "Kode Batch", "Grade"]);
-    for (const worksheet of workbook.worksheets) worksheet.getRow(1).font = { bold: true };
+    replaceSheetRows("MP repair", (monitoringQuery.data ?? []).map((item, index) => [index + 1, item.date.slice(0, 10), item.operatorCount, "", `Gd ${item.warehouse}`]));
 
     const buffer = await workbook.xlsx.writeBuffer();
     const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
