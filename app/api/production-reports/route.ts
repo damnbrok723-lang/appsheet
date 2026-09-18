@@ -275,7 +275,7 @@ export async function GET() {
       tonnageKg: true,
       stockGrade: true,
       stockType: true,
-      photoData: true, // Included for lightweight photos, but truncated or checked below
+      photoData: true,
       status: true,
       createdAt: true,
       updatedAt: true,
@@ -285,12 +285,15 @@ export async function GET() {
   return Response.json({
     success: true,
     data: {
-      reports: reports.map((report) => ({
-        ...report,
-        hasPhoto: Boolean(report.photoData),
-        pipeTypes: JSON.parse(report.pipeTypes),
-        operatorTypes: JSON.parse(report.operatorTypes),
-      })),
+      reports: reports.map((report) => {
+        const { photoData, ...reportWithoutPhoto } = report;
+        return {
+          ...reportWithoutPhoto,
+          hasPhoto: Boolean(photoData),
+          pipeTypes: JSON.parse(report.pipeTypes),
+          operatorTypes: JSON.parse(report.operatorTypes),
+        };
+      }),
     },
   });
 }

@@ -103,8 +103,8 @@ export default function ReportsPage() {
   const reportsQuery = useQuery({
     queryKey: ["production-reports"],
     queryFn: fetchReports,
-    staleTime: 0,
-    refetchInterval: 3000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
   const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });

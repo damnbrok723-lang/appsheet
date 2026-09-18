@@ -137,8 +137,8 @@ export default function StokNcrPage() {
       if (!res.ok) throw new Error("Gagal memuat data NCR");
       return (await res.json()).data.reports as Report[];
     },
-    staleTime: 0,
-    refetchInterval: 3000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
 
