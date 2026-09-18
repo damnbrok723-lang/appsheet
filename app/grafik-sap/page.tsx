@@ -156,7 +156,8 @@ export default function GrafikSapPage() {
         { names: ["repair", "output repair"], hint: "repair" },
         { names: ["mp repair", "mprepair", "monitoring"], hint: "mp repair" },
       ];
-      const results = [];
+      type ImportCounts = { stockImported: number; repairImported: number; manpowerImported: number };
+      const results: Partial<ImportCounts>[] = [];
       for (const job of sheetJobs) {
         const sheetName = workbook.SheetNames.find((name) => job.names.includes(name.trim().toLowerCase()));
         if (!sheetName) continue;
@@ -168,14 +169,14 @@ export default function GrafikSapPage() {
         body.append("sheetHint", job.hint);
         const response = await fetch("/api/control-daily-repair", { method: "POST", body });
         const responseText = await response.text();
-        let result: { success?: boolean; message?: string; data?: { stockImported?: number; repairImported?: number; manpowerImported?: number } };
+        let result: { success?: boolean; message?: string; data?: Partial<ImportCounts> };
         try {
           result = JSON.parse(responseText);
         } catch {
           throw new Error(`Server menolak import ${sheetName} (HTTP ${response.status}): ${responseText.slice(0, 160)}`);
         }
         if (!response.ok || !result.success) throw new Error(result.message || `Import ${sheetName} gagal (HTTP ${response.status})`);
-        results.push(result.data);
+        results.push(result.data ?? {});
       }
       if (!results.length) throw new Error("Sheet SAP yang didukung tidak ditemukan");
       const result = results.reduce((total, current) => ({
@@ -190,7 +191,7 @@ export default function GrafikSapPage() {
         queryClient.invalidateQueries({ queryKey: ["monitoring"] }),
       ]);
       notifySapDataUpdated();
-      toast.success(`Import selesai: ${result.data.stockImported} stok, ${result.data.repairImported} repair, ${result.data.manpowerImported} manpower`, { id: "import-control" });
+      toast.success(`Import selesai: ${result.stockImported} stok, ${result.repairImported} repair, ${result.manpowerImported} manpower`, { id: "import-control" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gagal mengimpor workbook SAP", { id: "import-control" });
     } finally {
