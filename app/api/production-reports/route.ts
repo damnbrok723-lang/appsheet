@@ -122,7 +122,6 @@ async function importReports(request: Request, userId: string) {
   if (!sheet) return Response.json({ success: false, message: "Sheet Excel tidak ditemukan" }, { status: 400 });
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
   if (!rows.length) return Response.json({ success: false, message: "File Excel tidak memiliki data" }, { status: 400 });
-  if (rows.length > 10_000) return Response.json({ success: false, message: "Maksimal 10.000 baris per import" }, { status: 400 });
 
   const imported = rows
     .filter((row) => Object.values(row).some((val) => textValue(val) !== ""))
@@ -212,7 +211,6 @@ export async function GET() {
   const reports = await prisma.productionReport.findMany({
     where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string },
     orderBy: { reportDate: "desc" },
-    take: 100,
   });
   return Response.json({
     success: true,
@@ -225,7 +223,6 @@ export async function POST(request: Request) {
     const session = await getSession();
     if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
     if (request.headers.get("content-type")?.startsWith("multipart/form-data")) {
-      if ((session.user as { role?: string }).role !== "ADMIN") return Response.json({ success: false, message: "Import Excel hanya dapat dilakukan Admin" }, { status: 403 });
       return importReports(request, session.user.id as string);
     }
 

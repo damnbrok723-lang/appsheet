@@ -166,6 +166,20 @@ export default function ReportsPage() {
     onError: (error) => toast.error(error.message),
   });
 
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/production-reports", { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Gagal menghapus semua laporan");
+      return result.data.deleted as number;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} laporan berhasil dihapus`);
+      queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
   function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -639,6 +653,22 @@ export default function ReportsPage() {
                 <Printer className="mr-2 h-4 w-4" />
                 Export PDF
               </Button>
+              {allReports.length > 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={deleteAllMutation.isPending}
+                  onClick={() => {
+                    if (window.confirm(`Yakin hapus SEMUA ${allReports.length} laporan? Tindakan ini tidak bisa dibatalkan.`)) {
+                      deleteAllMutation.mutate();
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {deleteAllMutation.isPending ? "Menghapus..." : "Hapus Semua"}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
