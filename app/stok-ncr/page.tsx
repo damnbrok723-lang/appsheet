@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   Printer,
   Search,
   ShieldAlert,
+  Upload,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -59,12 +60,47 @@ function formatShift(shift?: string) {
 }
 
 export default function StokNcrPage() {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; ncr: string; batch: string } | null>(null);
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    toast.loading("Mengimpor file Excel / CSV Stok NCR...", { id: "import-ncr" });
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/production-reports", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Gagal mengimpor file Excel / CSV");
+      }
+
+      toast.success(`Berhasil mengimpor ${data.data?.imported ?? 0} data Stok NCR!`, { id: "import-ncr" });
+      queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-ncr" });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   const sessionQuery = useQuery({
     queryKey: ["auth-session"],
@@ -411,6 +447,24 @@ export default function StokNcrPage() {
                   <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-8 min-w-0 max-w-[8.5rem] flex-1 text-xs" />
                 </div>
                 <div className="flex flex-wrap gap-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImportFile}
+                    accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isImporting}
+                    className="h-8 text-xs bg-rose-600 hover:bg-rose-700 text-white"
+                  >
+                    <Upload className="mr-1 h-3.5 w-3.5" />
+                    {isImporting ? "Mengimpor..." : "Import CSV / Excel"}
+                  </Button>
                   <Button type="button" variant="outline" size="sm" onClick={exportNcrExcel} disabled={!filteredReports.length} className="h-8 text-xs">
                     <Download className="mr-1 h-3.5 w-3.5" />
                     Export

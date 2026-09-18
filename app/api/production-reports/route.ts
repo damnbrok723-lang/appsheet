@@ -257,10 +257,6 @@ export async function POST(request: Request) {
     const session = await getSession();
     if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
     if (request.headers.get("content-type")?.startsWith("multipart/form-data")) {
-      const role = (session.user as { role?: string }).role;
-      if (!role || !["ADMIN", "MANAGER"].includes(role)) {
-        return Response.json({ success: false, message: "Import Excel hanya dapat dilakukan oleh Admin atau Manager" }, { status: 403 });
-      }
       return importReports(request, session.user.id as string);
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, ClipboardList, Factory, FileBarChart, User } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Wrench, FileBarChart, Activity, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -11,8 +11,9 @@ import { hasPermission, CardId } from "@/lib/card-permissions";
 const mobileItems: { name: string; href: string; icon: any; permission?: CardId }[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "nav_dashboard" },
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },
-  { name: "Repair", href: "/output-repair", icon: Factory, permission: "nav_repair" },
+  { name: "Output Repair", href: "/output-repair", icon: Wrench, permission: "nav_repair" },
   { name: "Laporan", href: "/reports", icon: FileBarChart, permission: "nav_laporan" },
+  { name: "Monitoring", href: "/monitoring", icon: Activity, permission: "nav_dashboard" },
   { name: "Profil", href: "/profile", icon: User }, // Always show
 ];
 

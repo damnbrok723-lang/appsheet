@@ -6,10 +6,9 @@ import Link from "next/link";
 import {
   LayoutDashboard,
   ClipboardList,
+  Wrench,
   FileBarChart,
   Activity,
-  Users,
-  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -31,10 +30,9 @@ import { hasPermission, CardId } from "@/lib/card-permissions";
 const menuItems: { name: string; href: string; icon: any; permission: CardId }[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "nav_dashboard" },
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },
+  { name: "Output Repair", href: "/output-repair", icon: Wrench, permission: "nav_repair" },
   { name: "Laporan", href: "/reports", icon: FileBarChart, permission: "nav_laporan" },
   { name: "Monitoring", href: "/monitoring", icon: Activity, permission: "nav_dashboard" },
-  { name: "Manajemen Tim", href: "/team", icon: Users, permission: "nav_admin" },
-  { name: "Admin Panel", href: "/dashboard/admin", icon: ShieldCheck, permission: "nav_admin" },
 ];
 
 export function Sidebar() {
