@@ -41,7 +41,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               className={
                 isAuthPage
                   ? "flex-1 overflow-y-auto overflow-x-hidden"
-                  : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6"
+                  : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-0"
               }
             >
               {/* Inner wrapper: full width, never wider than container */}
