@@ -73,13 +73,11 @@ async function syncProductionRows(rows: ProductionImportRow[], userId: string, s
     where: { userId, sourceType, sourceKey: { in: unique.map((row) => row.sourceKey) } },
     select: { id: true, sourceKey: true },
   });
-  const existingByKey = new Map(existing.map((row) => [row.sourceKey, row.id]));
-  await prisma.$transaction(unique.map((row) => {
-    const id = existingByKey.get(row.sourceKey);
-    return id
-      ? prisma.productionReport.update({ where: { id }, data: row })
-      : prisma.productionReport.create({ data: { ...row, userId } });
-  }));
+  const existingIds = existing.map((row) => row.id);
+  const operations: Prisma.PrismaPromise<unknown>[] = [];
+  if (existingIds.length) operations.push(prisma.productionReport.deleteMany({ where: { id: { in: existingIds } } }));
+  operations.push(prisma.productionReport.createMany({ data: unique.map((row) => ({ ...row, userId })) }));
+  await prisma.$transaction(operations);
   return unique.length;
 }
 
@@ -89,13 +87,11 @@ async function syncMonitoringRows(rows: MonitoringImportRow[], userId: string) {
     where: { userId, sourceKey: { in: unique.map((row) => row.sourceKey) } },
     select: { id: true, sourceKey: true },
   });
-  const existingByKey = new Map(existing.map((row) => [row.sourceKey, row.id]));
-  await prisma.$transaction(unique.map((row) => {
-    const id = existingByKey.get(row.sourceKey);
-    return id
-      ? prisma.monitoringEntry.update({ where: { id }, data: row })
-      : prisma.monitoringEntry.create({ data: { ...row, userId } });
-  }));
+  const existingIds = existing.map((row) => row.id);
+  const operations: Prisma.PrismaPromise<unknown>[] = [];
+  if (existingIds.length) operations.push(prisma.monitoringEntry.deleteMany({ where: { id: { in: existingIds } } }));
+  operations.push(prisma.monitoringEntry.createMany({ data: unique.map((row) => ({ ...row, userId })) }));
+  await prisma.$transaction(operations);
   return unique.length;
 }
 
