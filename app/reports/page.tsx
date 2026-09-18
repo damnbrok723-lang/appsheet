@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Camera, ChevronLeft, ChevronRight, Download, Eye, FileBarChart, Filter, Pencil, Printer, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
 
 type Report = {
@@ -285,51 +286,103 @@ export default function ReportsPage() {
     });
   }, [allReports, filterFrom, filterTo]);
 
-  function exportCsv() {
-    const rows = filteredReports;
-    const sheet = XLSX.utils.json_to_sheet(
-      rows.map((report) => ({
-        Tanggal: report.reportDate.slice(0, 10),
-        Customer: report.customer,
-        Dimensi: report.dimensions,
-        "Jenis Pipa": Array.isArray(report.pipeTypes) ? report.pipeTypes.join("; ") : report.pipeTypes,
-        Batch: report.batchNumber,
-        "No NCR": report.ncrNumber ?? "",
-        "Jenis Operator": Array.isArray(report.operatorTypes) ? report.operatorTypes.join("; ") : report.operatorTypes,
-        Operator: report.operatorName,
-        Shift: formatShift(report.shift),
-        "Qty OK": report.qtyOk,
-        "Qty NG": report.qtyNg,
-        "Keterangan NG": report.ngNotes ?? "",
-        "Keterangan Proses": report.processNotes ?? "",
-      }))
-    );
-    sheet["!cols"] = [
-      { wch: 14 },
-      { wch: 24 },
-      { wch: 20 },
-      { wch: 14 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 22 },
-      { wch: 16 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 24 },
-      { wch: 24 },
-    ];
-    sheet["!autofilter"] = { ref: `A1:M${rows.length + 1}` };
-    sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, "Laporan Produksi");
-    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `laporan-produksi-${filterFrom || "all"}-sd-${filterTo || "all"}.xlsx`;
-    link.click();
-    URL.revokeObjectURL(url);
+  async function exportCsv() {
+    toast.loading("Mengeksport Excel dengan foto...", { id: "export-excel" });
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Laporan Produksi");
+
+      worksheet.columns = [
+        { header: "Tanggal", key: "tanggal", width: 14 },
+        { header: "Customer", key: "customer", width: 24 },
+        { header: "Dimensi", key: "dimensi", width: 20 },
+        { header: "Jenis Pipa", key: "pipa", width: 14 },
+        { header: "Batch", key: "batch", width: 18 },
+        { header: "No NCR", key: "ncr", width: 18 },
+        { header: "Jenis Operator", key: "jenisOperator", width: 18 },
+        { header: "Operator", key: "operator", width: 22 },
+        { header: "Shift", key: "shift", width: 16 },
+        { header: "Qty OK", key: "ok", width: 12 },
+        { header: "Qty NG", key: "ng", width: 12 },
+        { header: "Keterangan NG", key: "ngNotes", width: 24 },
+        { header: "Keterangan Proses", key: "processNotes", width: 24 },
+        { header: "Foto Dokumentasi", key: "foto", width: 22 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E293B" } };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.height = 24;
+
+      for (let i = 0; i < filteredReports.length; i++) {
+        const report = filteredReports[i];
+        let photoDataUrl = report.photoData;
+
+        if (!photoDataUrl && (report as Report & { hasPhoto?: boolean }).hasPhoto) {
+          try {
+            const res = await fetch(`/api/production-reports/${report.id}`);
+            const data = await res.json();
+            if (data.data?.photoData) {
+              photoDataUrl = data.data.photoData;
+            }
+          } catch {
+            // fallback if fetch fails
+          }
+        }
+
+        const row = worksheet.addRow({
+          tanggal: report.reportDate.slice(0, 10),
+          customer: report.customer,
+          dimensi: report.dimensions,
+          pipa: Array.isArray(report.pipeTypes) ? report.pipeTypes.join("; ") : report.pipeTypes,
+          batch: report.batchNumber,
+          ncr: report.ncrNumber ?? "",
+          jenisOperator: Array.isArray(report.operatorTypes) ? report.operatorTypes.join("; ") : report.operatorTypes,
+          operator: report.operatorName,
+          shift: formatShift(report.shift),
+          ok: report.qtyOk,
+          ng: report.qtyNg,
+          ngNotes: report.ngNotes ?? "",
+          processNotes: report.processNotes ?? "",
+          foto: photoDataUrl ? "" : "Tidak Ada Foto",
+        });
+
+        row.alignment = { vertical: "middle" };
+
+        if (photoDataUrl && photoDataUrl.startsWith("data:image/")) {
+          row.height = 65;
+          const mimeType = photoDataUrl.substring(photoDataUrl.indexOf(":") + 1, photoDataUrl.indexOf(";"));
+          const extension = mimeType.includes("png") ? "png" : "jpeg";
+          const base64 = photoDataUrl.split(",")[1];
+
+          const imageId = workbook.addImage({
+            base64: base64,
+            extension: extension as "png" | "jpeg",
+          });
+
+          worksheet.addImage(imageId, {
+            tl: { col: 13, row: i + 1 },
+            ext: { width: 110, height: 75 },
+            editAs: "oneCell",
+          });
+        }
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `laporan-produksi-${filterFrom || "all"}-sd-${filterTo || "all"}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast.success("File Excel berhasil di-export!", { id: "export-excel" });
+    } catch (error) {
+      console.error("Export Excel error:", error);
+      toast.error("Gagal mengeksport Excel", { id: "export-excel" });
+    }
   }
 
   const field = (name: keyof ReportForm) => ({
