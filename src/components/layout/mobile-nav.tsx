@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, ClipboardList, Factory, FileBarChart, Activity } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, FileBarChart, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 const mobileItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList },
-  { name: "Output Repair", href: "/output-repair", icon: Factory },
+  { name: "Repair", href: "/output-repair", icon: Factory },
   { name: "Laporan", href: "/reports", icon: FileBarChart },
-  { name: "Monitoring", href: "/monitoring", icon: Activity },
+  { name: "Profil", href: "/profile", icon: User },
 ];
 
 export function MobileNav() {
@@ -22,7 +22,14 @@ export function MobileNav() {
         {mobileItems.map((item) => {
           const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
           return (
-            <Link key={item.name} href={item.href} className={cn("flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors", isActive ? "text-primary" : "text-muted-foreground")}>
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+                isActive ? "text-primary font-bold" : "text-muted-foreground"
+              )}
+            >
               <item.icon className="h-5 w-5" />
               <span>{item.name}</span>
             </Link>
