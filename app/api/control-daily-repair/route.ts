@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/permissions";
+import type { Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
+
+type ProductionImportRow = Omit<Prisma.ProductionReportUncheckedCreateInput, "userId"> & { sourceKey: string };
+type MonitoringImportRow = Omit<Prisma.MonitoringEntryUncheckedCreateInput, "userId"> & { sourceKey: string };
 
 function textValue(value: unknown) {
   return String(value ?? "").trim();
@@ -55,6 +59,46 @@ function findSheet(workbook: XLSX.WorkBook, names: string[]) {
   return workbook.SheetNames.find((name) => names.includes(name.trim().toLowerCase()));
 }
 
+function stableKey(parts: unknown[]) {
+  return parts.map((part) => textValue(part).toUpperCase()).join("|");
+}
+
+function uniqueRows<T extends { sourceKey: string }>(rows: T[]) {
+  return [...new Map(rows.map((row) => [row.sourceKey, row])).values()];
+}
+
+async function syncProductionRows(rows: ProductionImportRow[], userId: string, sourceType: string) {
+  const unique = uniqueRows(rows);
+  const existing = await prisma.productionReport.findMany({
+    where: { userId, sourceType, sourceKey: { in: unique.map((row) => row.sourceKey) } },
+    select: { id: true, sourceKey: true },
+  });
+  const existingByKey = new Map(existing.map((row) => [row.sourceKey, row.id]));
+  await prisma.$transaction(unique.map((row) => {
+    const id = existingByKey.get(row.sourceKey);
+    return id
+      ? prisma.productionReport.update({ where: { id }, data: row })
+      : prisma.productionReport.create({ data: { ...row, userId } });
+  }));
+  return unique.length;
+}
+
+async function syncMonitoringRows(rows: MonitoringImportRow[], userId: string) {
+  const unique = uniqueRows(rows);
+  const existing = await prisma.monitoringEntry.findMany({
+    where: { userId, sourceKey: { in: unique.map((row) => row.sourceKey) } },
+    select: { id: true, sourceKey: true },
+  });
+  const existingByKey = new Map(existing.map((row) => [row.sourceKey, row.id]));
+  await prisma.$transaction(unique.map((row) => {
+    const id = existingByKey.get(row.sourceKey);
+    return id
+      ? prisma.monitoringEntry.update({ where: { id }, data: row })
+      : prisma.monitoringEntry.create({ data: { ...row, userId } });
+  }));
+  return unique.length;
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -85,7 +129,7 @@ export async function POST(request: Request) {
         const batch = textValue(row.batch || `STOCK-${index + 1}`);
         const qtyNg = Math.max(0, Math.round(numberValue(row.unrestrictedpcs)));
         return {
-          userId,
+          sourceKey: stableKey(["STOCK", row.sloc, row.materialnumber, batch, row.customer, row.stlt, row.grade, row.diamm, row.tebal, row.panjang]),
           reportDate: parseDateValue(row.requesteddelivdate),
           customer: textValue(row.customer) || "Customer Umum",
           dimensions: `${textValue(row.diammm || "-")} x ${textValue(row.tebal || "-")} x ${textValue(row.panjang || "-")}`,
@@ -108,15 +152,14 @@ export async function POST(request: Request) {
         };
       });
       if (data.length) {
-        await prisma.productionReport.createMany({ data });
-        stockImported = data.length;
+        stockImported = await syncProductionRows(data, userId, "STOCK");
       }
     }
 
     if (repairSheet) {
       const rows = rowValues(repairSheet);
       const data = rows.map((row, index) => ({
-        userId,
+        sourceKey: stableKey(["REPAIR", row.order, row.materialdoc, row.batch, row.mvt, row.postdate, row.sloc]),
         reportDate: parseDateValue(row.postdate || row.docdate),
         customer: textValue(row.name) || "Customer Umum",
         dimensions: `${textValue(row.diamm || "-")} x ${textValue(row.tebal || "-")} x ${textValue(row.panjang || "-")}`,
@@ -138,15 +181,14 @@ export async function POST(request: Request) {
         status: "DRAFT",
       }));
       if (data.length) {
-        await prisma.productionReport.createMany({ data });
-        repairImported = data.length;
+        repairImported = await syncProductionRows(data, userId, "OUTPUT_REPAIR");
       }
     }
 
     if (manpowerSheet) {
       const rows = rowValues(manpowerSheet);
       const data = rows.map((row) => ({
-        userId,
+        sourceKey: stableKey(["MP", row.tanggal || row.date, row.shift, row.gudang || row.warehouse]),
         date: parseDateValue(row.tanggal || row.date),
         shift: shiftValue(row.shift),
         operatorCount: Math.max(0, Math.round(numberValue(row.jumlahoperator || row.operatorcount))),
@@ -154,8 +196,7 @@ export async function POST(request: Request) {
         teamLeader: textValue(row.kepalaregu || row.teamleader) || "SAP Import",
       }));
       if (data.length) {
-        await prisma.monitoringEntry.createMany({ data });
-        manpowerImported = data.length;
+        manpowerImported = await syncMonitoringRows(data, userId);
       }
     }
 

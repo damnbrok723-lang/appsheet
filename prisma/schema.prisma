@@ -293,6 +293,7 @@ model Attendance {
 model MonitoringEntry {
   id            String   @id @default(uuid())
   userId        String   @map("user_id")
+  sourceKey     String?  @map("source_key")
   date          DateTime
   shift         String
   operatorCount Int      @map("operator_count")
@@ -311,6 +312,7 @@ model MonitoringEntry {
 model ProductionReport {
   id            String   @id @default(uuid())
   userId        String   @map("user_id")
+  sourceKey     String?  @map("source_key")
   reportDate    DateTime @map("report_date")
   customer      String
   dimensions    String
