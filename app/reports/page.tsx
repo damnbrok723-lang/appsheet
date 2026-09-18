@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Camera, Download, Eye, FileBarChart, Filter, Pencil, Printer, Trash2, X } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Download, Eye, FileBarChart, Filter, Pencil, Printer, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import * as XLSX from "xlsx";
@@ -104,10 +104,17 @@ export default function ReportsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; date: string; batch: string; shift: string } | null>(null);
 
   const currentUser = sessionQuery.data?.user as { id?: string; role?: string } | undefined;
   const isReviewer = currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
+
+  // Reset pagination on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterFrom, filterTo]);
 
   // Close photo modal on Escape key
   useEffect(() => {
@@ -285,19 +292,34 @@ export default function ReportsPage() {
         Tanggal: report.reportDate.slice(0, 10),
         Customer: report.customer,
         Dimensi: report.dimensions,
-        "Jenis Pipa": report.pipeTypes.join("; "),
+        "Jenis Pipa": Array.isArray(report.pipeTypes) ? report.pipeTypes.join("; ") : report.pipeTypes,
         Batch: report.batchNumber,
         "No NCR": report.ncrNumber ?? "",
-        "Jenis Operator": report.operatorTypes.join("; "),
+        "Jenis Operator": Array.isArray(report.operatorTypes) ? report.operatorTypes.join("; ") : report.operatorTypes,
         Operator: report.operatorName,
         Shift: formatShift(report.shift),
         "Qty OK": report.qtyOk,
         "Qty NG": report.qtyNg,
-        Status: report.status,
+        "Keterangan NG": report.ngNotes ?? "",
+        "Keterangan Proses": report.processNotes ?? "",
       }))
     );
-    sheet["!cols"] = [{ wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
-    sheet["!autofilter"] = { ref: `A1:L${rows.length + 1}` };
+    sheet["!cols"] = [
+      { wch: 14 },
+      { wch: 24 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 22 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 24 },
+      { wch: 24 },
+    ];
+    sheet["!autofilter"] = { ref: `A1:M${rows.length + 1}` };
     sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, "Laporan Produksi");
@@ -338,6 +360,12 @@ export default function ReportsPage() {
     }
     return { totalOk: ok, totalNg: ng };
   }, [filteredReports]);
+
+  const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
+  const paginatedReports = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredReports.slice(start, start + pageSize);
+  }, [filteredReports, currentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -689,7 +717,7 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           <div className="divide-y">
-            {filteredReports.map((report) => {
+            {paginatedReports.map((report) => {
               const canSubmit = report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION");
               const canEdit = currentUser?.role === "ADMIN" || (report.userId === currentUser?.id && (report.status === "DRAFT" || report.status === "REVISION"));
               const canDelete = currentUser?.role === "ADMIN" || (report.userId === currentUser?.id && report.status === "DRAFT");
@@ -833,10 +861,61 @@ export default function ReportsPage() {
               );
             })}
           </div>
-          {filteredReports.length === 0 && (
+          {filteredReports.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
               {allReports.length === 0 ? "Belum ada laporan tersimpan." : "Tidak ada laporan pada rentang tanggal ini."}
             </p>
+          ) : (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2">
+                <span>Tampilkan</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="rounded border bg-background px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value={10}>10 per halaman</option>
+                  <option value={25}>25 per halaman</option>
+                  <option value={50}>50 per halaman</option>
+                  <option value={100}>100 per halaman</option>
+                </select>
+                <span>
+                  · Menampilkan {Math.min((currentPage - 1) * pageSize + 1, filteredReports.length)} -{" "}
+                  {Math.min(currentPage * pageSize, filteredReports.length)} dari {filteredReports.length} laporan
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="h-8 px-2"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Prev
+                </Button>
+                <span className="px-2 font-medium text-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="h-8 px-2"
+                >
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
