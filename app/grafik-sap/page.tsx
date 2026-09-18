@@ -143,6 +143,10 @@ export default function GrafikSapPage() {
   async function importWorkbook(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File terlalu besar. Maksimal 50 MB.", { id: "import-control" });
+      return;
+    }
     setIsImporting(true);
     toast.loading("Mengimpor Control Daily Repair by SAP...", { id: "import-control" });
     try {
@@ -163,7 +167,13 @@ export default function GrafikSapPage() {
         body.append("file", new File([bytes], `${sheetName}.xlsx`, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
         body.append("sheetHint", job.hint);
         const response = await fetch("/api/control-daily-repair", { method: "POST", body });
-        const result = await response.json();
+        const responseText = await response.text();
+        let result: { success?: boolean; message?: string; data?: { stockImported?: number; repairImported?: number; manpowerImported?: number } };
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          throw new Error(`Server menolak import ${sheetName} (HTTP ${response.status}): ${responseText.slice(0, 160)}`);
+        }
         if (!response.ok || !result.success) throw new Error(result.message || `Import ${sheetName} gagal (HTTP ${response.status})`);
         results.push(result.data);
       }
