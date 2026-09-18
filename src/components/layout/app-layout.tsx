@@ -18,7 +18,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {!isAuthPage && <div className="hidden shrink-0 md:block"><Sidebar /></div>}
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
             {!isAuthPage && <Header />}
-            <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+            <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">
               {children}
             </main>
             {!isAuthPage && <MobileNav />}
