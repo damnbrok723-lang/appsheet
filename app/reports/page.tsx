@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -98,8 +98,8 @@ export default function ReportsPage() {
   const queryClient = useQueryClient();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0, refetchInterval: 30_000 });
-  const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
+  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 60_000 });
+  const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 10 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterFrom, setFilterFrom] = useState("");
@@ -269,12 +269,14 @@ export default function ReportsPage() {
   }
 
   const allReports = reportsQuery.data ?? [];
-  const filteredReports = allReports.filter((report) => {
-    const date = report.reportDate.slice(0, 10);
-    if (filterFrom && date < filterFrom) return false;
-    if (filterTo && date > filterTo) return false;
-    return true;
-  });
+  const filteredReports = useMemo(() => {
+    return allReports.filter((report) => {
+      const date = report.reportDate.slice(0, 10);
+      if (filterFrom && date < filterFrom) return false;
+      if (filterTo && date > filterTo) return false;
+      return true;
+    });
+  }, [allReports, filterFrom, filterTo]);
 
   function exportCsv() {
     const rows = filteredReports;
@@ -313,20 +315,29 @@ export default function ReportsPage() {
     onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: event.target.value }),
   });
 
-  const chartData = Object.values(
-    filteredReports.reduce<Record<string, { rawDate: string; date: string; ok: number; ng: number }>>((groups, report) => {
-      const rawDate = report.reportDate.slice(0, 10);
-      const date = new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
-      const current = groups[rawDate] ?? { rawDate, date, ok: 0, ng: 0 };
-      current.ok += report.qtyOk;
-      current.ng += report.qtyNg;
-      groups[rawDate] = current;
-      return groups;
-    }, {})
-  ).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+  const chartData = useMemo(() => {
+    return Object.values(
+      filteredReports.reduce<Record<string, { rawDate: string; date: string; ok: number; ng: number }>>((groups, report) => {
+        const rawDate = report.reportDate.slice(0, 10);
+        const date = new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
+        const current = groups[rawDate] ?? { rawDate, date, ok: 0, ng: 0 };
+        current.ok += report.qtyOk;
+        current.ng += report.qtyNg;
+        groups[rawDate] = current;
+        return groups;
+      }, {})
+    ).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+  }, [filteredReports]);
 
-  const totalOk = filteredReports.reduce((total, report) => total + report.qtyOk, 0);
-  const totalNg = filteredReports.reduce((total, report) => total + report.qtyNg, 0);
+  const { totalOk, totalNg } = useMemo(() => {
+    let ok = 0;
+    let ng = 0;
+    for (const r of filteredReports) {
+      ok += r.qtyOk;
+      ng += r.qtyNg;
+    }
+    return { totalOk: ok, totalNg: ng };
+  }, [filteredReports]);
 
   return (
     <div className="space-y-6">
@@ -687,22 +698,51 @@ export default function ReportsPage() {
                 <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                   {/* DETAIL DAN FOTO THUMBNAIL LANGSUNG DI DAFTAR */}
                   <div className="flex items-center gap-3">
-                    {report.photoData ? (
+                    {(report.photoData || (report as Report & { hasPhoto?: boolean }).hasPhoto) ? (
                       <button
                         type="button"
-                        onClick={() =>
-                          setPreviewPhoto({
-                            url: report.photoData!,
-                            customer: report.customer,
-                            date: new Date(report.reportDate).toLocaleDateString("id-ID"),
-                            batch: report.batchNumber,
-                            shift: formatShift(report.shift),
-                          })
-                        }
+                        onClick={async () => {
+                          if (report.photoData) {
+                            setPreviewPhoto({
+                              url: report.photoData,
+                              customer: report.customer,
+                              date: new Date(report.reportDate).toLocaleDateString("id-ID"),
+                              batch: report.batchNumber,
+                              shift: formatShift(report.shift),
+                            });
+                          } else {
+                            toast.loading("Memuat foto...", { id: "load-photo" });
+                            try {
+                              const res = await fetch(`/api/production-reports/${report.id}`);
+                              const data = await res.json();
+                              toast.dismiss("load-photo");
+                              if (data.data?.photoData) {
+                                setPreviewPhoto({
+                                  url: data.data.photoData,
+                                  customer: report.customer,
+                                  date: new Date(report.reportDate).toLocaleDateString("id-ID"),
+                                  batch: report.batchNumber,
+                                  shift: formatShift(report.shift),
+                                });
+                              } else {
+                                toast.error("Foto tidak ditemukan");
+                              }
+                            } catch {
+                              toast.dismiss("load-photo");
+                              toast.error("Gagal memuat foto");
+                            }
+                          }
+                        }}
                         className="group relative h-12 w-12 flex-shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-muted transition hover:ring-2 hover:ring-primary focus:outline-none"
                         title="Klik untuk cek foto langsung"
                       >
-                        <img src={report.photoData} alt={report.customer} className="h-full w-full object-cover transition group-hover:scale-110" />
+                        {report.photoData ? (
+                          <img src={report.photoData} alt={report.customer} className="h-full w-full object-cover transition group-hover:scale-110" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary">
+                            <Camera className="h-5 w-5" />
+                          </div>
+                        )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100">
                           <Eye className="h-4 w-4 text-white" />
                         </div>

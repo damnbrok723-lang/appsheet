@@ -210,11 +210,39 @@ export async function GET() {
   const role = (session.user as { role?: string }).role;
   const reports = await prisma.productionReport.findMany({
     where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string },
+    select: {
+      id: true,
+      userId: true,
+      reportDate: true,
+      customer: true,
+      dimensions: true,
+      pipeTypes: true,
+      batchNumber: true,
+      ncrNumber: true,
+      operatorTypes: true,
+      operatorName: true,
+      shift: true,
+      qtyOk: true,
+      qtyNg: true,
+      ngNotes: true,
+      processNotes: true,
+      photoData: true, // Included for lightweight photos, but truncated or checked below
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
     orderBy: { reportDate: "desc" },
   });
   return Response.json({
     success: true,
-    data: { reports: reports.map((report: ProductionReport) => ({ ...report, pipeTypes: JSON.parse(report.pipeTypes), operatorTypes: JSON.parse(report.operatorTypes) })) },
+    data: {
+      reports: reports.map((report) => ({
+        ...report,
+        hasPhoto: Boolean(report.photoData),
+        pipeTypes: JSON.parse(report.pipeTypes),
+        operatorTypes: JSON.parse(report.operatorTypes),
+      })),
+    },
   });
 }
 
