@@ -19,12 +19,9 @@ import {
 import {
   Users,
   Warehouse,
-  Calendar,
-  Filter,
   BarChart3,
   RefreshCw,
   Activity,
-  Layers,
 } from "lucide-react";
 
 type MonitoringEntry = {
@@ -49,15 +46,9 @@ type MonitoringData = {
 };
 
 const WAREHOUSE_COLORS: Record<string, string> = {
-  "1": "#3b82f6",
-  "5": "#06b6d4",
-  "13": "#8b5cf6",
-};
-
-const WAREHOUSE_LABELS: Record<string, string> = {
-  "1": "Gd 1",
-  "5": "Gd 5",
-  "13": "Gd 13",
+  "1": "#2563eb",  // Blue
+  "5": "#0d9488",  // Teal
+  "13": "#6366f1", // Indigo
 };
 
 function formatShift(shift?: string) {
@@ -95,10 +86,7 @@ export default function DashboardPage() {
 
   const summary = monitoringQuery.data?.summary;
 
-  // Transform data into exact layout matching the Excel chart:
-  // Y-axis label format: "Gd 5 - 2", "Gd 5 - 1", "Gd 13 - 2", "Gd 13 - 1", etc.
   const chartData = useMemo(() => {
-    // Group by Date -> Gudang -> Shift
     const dateMap: Record<string, Record<string, Record<string, number>>> = {};
 
     for (const entry of entries) {
@@ -118,7 +106,6 @@ export default function DashboardPage() {
       dateMap[key][whKey][shiftShort] = (dateMap[key][whKey][shiftShort] ?? 0) + entry.operatorCount;
     }
 
-    // Convert into flat array sorted by date & warehouse
     const result: Array<{
       id: string;
       dateLabel: string;
@@ -129,18 +116,15 @@ export default function DashboardPage() {
       warehouseNum: string;
     }> = [];
 
-    const sortedDates = Object.keys(dateMap).sort().reverse().slice(0, 5); // Take last 5 active dates
+    const sortedDates = Object.keys(dateMap).sort().reverse().slice(0, 5);
 
     for (const key of sortedDates) {
       const [, dateLabel] = key.split("|");
       const warehouses = dateMap[key];
-
-      // Order: Gd 5, Gd 13, Gd 1
       const whOrder = ["Gd 5", "Gd 13", "Gd 1"];
       for (const wh of whOrder) {
         if (!warehouses[wh]) continue;
         const shifts = warehouses[wh];
-        // Shift 2 first then Shift 1 to match Excel screenshot stack order
         const shiftKeys = Object.keys(shifts).sort().reverse();
         for (const sh of shiftKeys) {
           const warehouseNum = wh.replace("Gd ", "");
@@ -165,11 +149,11 @@ export default function DashboardPage() {
       {/* TITLE & HEADER */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            <BarChart3 className="h-6 w-6 text-primary md:h-8 md:w-8" />
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            <BarChart3 className="h-7 w-7 text-primary" />
             Dashboard Man Power Repair ST
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Grafik Manpower per Gudang &amp; Shift (Sumber Data: Inputan Monitoring).
           </p>
         </div>
@@ -180,7 +164,7 @@ export default function DashboardPage() {
             size="sm"
             onClick={() => monitoringQuery.refetch()}
             disabled={monitoringQuery.isFetching}
-            className="h-8 text-xs"
+            className="h-8 text-xs font-medium"
           >
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${monitoringQuery.isFetching ? "animate-spin" : ""}`} />
             Refresh Data
@@ -190,37 +174,45 @@ export default function DashboardPage() {
 
       {/* STAT CARDS */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="p-4 border-l-4 border-l-blue-600 bg-white dark:bg-slate-900 shadow-xs">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Manpower</p>
-            <Users className="h-4 w-4 text-blue-600" />
+            <div className="rounded-md bg-primary/10 p-2 text-primary">
+              <Users className="h-4 w-4" />
+            </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.totalMonthlyManpower ?? 0}</p>
           <p className="text-[11px] text-muted-foreground">Akumulasi Bulan Ini</p>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-purple-600 bg-white dark:bg-slate-900 shadow-xs">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Gudang 13</p>
-            <Warehouse className="h-4 w-4 text-purple-600" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Gudang 13</p>
+            <div className="rounded-md bg-indigo-50 dark:bg-indigo-950 p-2 text-indigo-600 dark:text-indigo-400">
+              <Warehouse className="h-4 w-4" />
+            </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["13"] ?? 0}</p>
           <p className="text-[11px] text-muted-foreground">Orang / Bulan ini</p>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-cyan-500 bg-white dark:bg-slate-900 shadow-xs">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Gudang 5</p>
-            <Warehouse className="h-4 w-4 text-cyan-500" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Gudang 5</p>
+            <div className="rounded-md bg-teal-50 dark:bg-teal-950 p-2 text-teal-600 dark:text-teal-400">
+              <Warehouse className="h-4 w-4" />
+            </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["5"] ?? 0}</p>
           <p className="text-[11px] text-muted-foreground">Orang / Bulan ini</p>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-blue-500 bg-white dark:bg-slate-900 shadow-xs">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">Gudang 1</p>
-            <Warehouse className="h-4 w-4 text-blue-500" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Gudang 1</p>
+            <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-2 text-blue-600 dark:text-blue-400">
+              <Warehouse className="h-4 w-4" />
+            </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["1"] ?? 0}</p>
           <p className="text-[11px] text-muted-foreground">Orang / Bulan ini</p>
@@ -231,12 +223,12 @@ export default function DashboardPage() {
       <Card className="p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
           <div>
-            <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-              <Activity className="h-5 w-5 text-cyan-600" />
+            <h2 className="text-base font-bold flex items-center gap-2 text-foreground">
+              <Activity className="h-5 w-5 text-primary" />
               Man Power Repair ST
             </h2>
             <p className="text-xs text-muted-foreground">
-              Visualisasi grafik horizontal sesuai format Excel: Tanggal → Gudang → Shift → Total Operator
+              Visualisasi grafik horizontal: Tanggal → Gudang → Shift → Total Operator
             </p>
           </div>
 
@@ -247,7 +239,7 @@ export default function DashboardPage() {
               <select
                 value={selectedWarehouse}
                 onChange={(e) => setSelectedWarehouse(e.target.value)}
-                className="h-8 rounded border bg-background px-2 font-medium text-foreground focus:outline-none"
+                className="h-8 rounded border bg-background px-2 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="ALL">Semua Gudang</option>
                 <option value="13">Gudang 13</option>
@@ -291,9 +283,9 @@ export default function DashboardPage() {
         </div>
 
         {/* CHART GRAPHIC */}
-        <div className="w-full bg-white dark:bg-slate-950 p-4 rounded-xl border shadow-xs">
+        <div className="w-full bg-card p-4 rounded-xl border shadow-xs">
           <div className="mb-2 text-center">
-            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Man Power Repair ST</p>
+            <p className="text-sm font-bold text-foreground">Man Power Repair ST</p>
           </div>
 
           {chartData.length === 0 ? (
@@ -325,7 +317,7 @@ export default function DashboardPage() {
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={WAREHOUSE_COLORS[entry.warehouseNum] || "#06b6d4"}
+                        fill={WAREHOUSE_COLORS[entry.warehouseNum] || "#2563eb"}
                       />
                     ))}
                     <LabelList dataKey="Total" position="right" style={{ fontSize: 11, fontWeight: "bold", fill: "#334155" }} />
@@ -338,14 +330,14 @@ export default function DashboardPage() {
           {/* LEGEND & FOOTER */}
           <div className="mt-4 flex flex-wrap items-center justify-between border-t pt-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-                <span className="h-3 w-3 rounded-xs bg-purple-600 inline-block" /> Gd 13
+              <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                <span className="h-3 w-3 rounded-xs bg-[#6366f1] inline-block" /> Gd 13
               </span>
-              <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-                <span className="h-3 w-3 rounded-xs bg-cyan-500 inline-block" /> Gd 5
+              <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                <span className="h-3 w-3 rounded-xs bg-[#0d9488] inline-block" /> Gd 5
               </span>
-              <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-                <span className="h-3 w-3 rounded-xs bg-blue-600 inline-block" /> Gd 1
+              <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                <span className="h-3 w-3 rounded-xs bg-[#2563eb] inline-block" /> Gd 1
               </span>
             </div>
             <span>Angka di kanan batang = Jumlah Operator per Shift</span>

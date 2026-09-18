@@ -302,11 +302,11 @@ export default function StokNcrPage() {
       {/* SCREEN VIEW */}
       <div className="print:hidden space-y-6">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-rose-700 dark:text-rose-400 md:text-3xl">
-            <ShieldAlert className="h-6 w-6 md:h-8 md:w-8" />
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            <ShieldAlert className="h-7 w-7 text-rose-600" />
             Stok NCR &amp; Grade C
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Daftar stok pipa defect, Non-Conformance Report (NCR), serta catatan cacat per customer.
           </p>
         </div>
@@ -314,48 +314,54 @@ export default function StokNcrPage() {
         {/* METRIK STOK NCR */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {showPcsCard && (
-            <Card className="rounded-xl border border-rose-200 bg-white p-5 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
+            <Card className="p-4 border bg-card shadow-xs">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Pcs NG / NCR</p>
-                <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
-                  <PackageX className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Pcs NG / NCR</p>
+                <div className="rounded-md bg-rose-50 dark:bg-rose-950 p-2 text-rose-600 dark:text-rose-400">
+                  <PackageX className="h-4 w-4" />
                 </div>
               </div>
-              <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Batang pipa defect tersimpan</p>
+              <p className="mt-2 text-2xl font-extrabold text-rose-600 dark:text-rose-400">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
+              <p className="text-[11px] text-muted-foreground">Batang pipa defect tersimpan</p>
             </Card>
           )}
 
           {showDocsCard && (
-            <Card className="p-5">
+            <Card className="p-4 border bg-card shadow-xs">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Dokumen NCR</p>
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dokumen NCR</p>
+                <div className="rounded-md bg-amber-50 dark:bg-amber-950 p-2 text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold">{stats.totalNcrDocs}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Total laporan kasus NCR</p>
+              <p className="mt-2 text-2xl font-extrabold text-foreground">{stats.totalNcrDocs}</p>
+              <p className="text-[11px] text-muted-foreground">Total laporan kasus NCR</p>
             </Card>
           )}
 
           {showCustomersCard && (
-            <Card className="p-5">
+            <Card className="p-4 border bg-card shadow-xs">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Customer Terpengaruh</p>
-                <FileSpreadsheet className="h-5 w-5 text-blue-500" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer Terpengaruh</p>
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <FileSpreadsheet className="h-4 w-4" />
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold">{stats.totalCustomers}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Customer pemilik batch NCR</p>
+              <p className="mt-2 text-2xl font-extrabold text-foreground">{stats.totalCustomers}</p>
+              <p className="text-[11px] text-muted-foreground">Customer pemilik batch NCR</p>
             </Card>
           )}
 
           {showDefectCasesCard && (
-            <Card className="p-5">
+            <Card className="p-4 border bg-card shadow-xs">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Total Kasus Defect</p>
-                <ShieldAlert className="h-5 w-5 text-purple-500" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Kasus Defect</p>
+                <div className="rounded-md bg-rose-50 dark:bg-rose-950 p-2 text-rose-600 dark:text-rose-400">
+                  <ShieldAlert className="h-4 w-4" />
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold">{stats.totalRecords}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Item tercatat dalam database</p>
+              <p className="mt-2 text-2xl font-extrabold text-foreground">{stats.totalRecords}</p>
+              <p className="text-[11px] text-muted-foreground">Item tercatat dalam database</p>
             </Card>
           )}
         </div>

@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMemo } from "react";
+import { Activity } from "lucide-react";
 
 type MonitoringEntry = { id: string; date: string; shift: string; operatorCount: number; warehouse: string; teamLeader: string | null };
 type MonitoringData = { entries: MonitoringEntry[]; summary: { totalOperators: number; qtyOk: number; qtyNg: number; okPercentage: number; totalMonthlyManpower: number; warehouseManpower: Record<string, number> } };
-const WAREHOUSE_COLORS: Record<string, string> = { "1": "#2563eb", "5": "#16a34a", "13": "#7c3aed" };
+const WAREHOUSE_COLORS: Record<string, string> = { "1": "#2563eb", "5": "#0d9488", "13": "#6366f1" };
 const WAREHOUSE_LABELS: Record<string, string> = { "1": "Gudang 1", "5": "Gudang 5", "13": "Gudang 13" };
 const shiftOptions = [["SHIFT_1", "Shift 1"], ["SHIFT_2", "Shift 2"], ["SHIFT_3", "Shift 3"], ["LONGSHIFT_1", "Longshift 1"], ["LONGSHIFT_2", "Longshift 2"]];
 const warehouses = ["1", "5", "13"];
@@ -99,32 +100,38 @@ export default function MonitoringPage() {
   const SHIFT_LABEL: Record<string, string> = { SHIFT_1: "Shift 1", SHIFT_2: "Shift 2", SHIFT_3: "Shift 3", LONGSHIFT_1: "Longshift 1", LONGSHIFT_2: "Longshift 2" };
 
   return <div className="space-y-6">
-    <div><h1 className="text-3xl font-bold tracking-tight">Monitoring Operasional</h1><p className="text-muted-foreground">Input dan pantau operator, shift, gudang, dan kepala regu.</p></div>
+    <div>
+      <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+        <Activity className="h-7 w-7 text-primary" />
+        Monitoring Operasional
+      </h1>
+      <p className="text-sm text-muted-foreground mt-0.5">Input dan pantau operator, shift, gudang, dan kepala regu.</p>
+    </div>
     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-      <Card className="p-5 border-l-4 border-l-slate-500">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Manpower</p>
-        <p className="text-xs text-muted-foreground">Bulan ini</p>
-        <p className="mt-2 text-2xl font-bold">{summary?.totalMonthlyManpower ?? 0}</p>
+      <Card className="p-4 border bg-card shadow-xs">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Manpower</p>
+        <p className="text-[11px] text-muted-foreground">Bulan ini</p>
+        <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.totalMonthlyManpower ?? 0}</p>
       </Card>
-      <Card className="p-5 border-l-4 border-l-amber-500">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Pergudangan</p>
-        <p className="text-xs text-muted-foreground">Semua gudang</p>
-        <p className="mt-2 text-2xl font-bold">{["1","5","13"].reduce((t,w)=>t+(summary?.warehouseManpower?.[w]??0),0)}</p>
+      <Card className="p-4 border bg-card shadow-xs">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Pergudangan</p>
+        <p className="text-[11px] text-muted-foreground">Semua gudang</p>
+        <p className="mt-2 text-2xl font-extrabold text-foreground">{["1","5","13"].reduce((t,w)=>t+(summary?.warehouseManpower?.[w]??0),0)}</p>
       </Card>
-      <Card className="p-5 border-l-4" style={{ borderLeftColor: WAREHOUSE_COLORS["13"] }}>
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Gudang 13</p>
-        <p className="text-xs text-muted-foreground">Bulan ini</p>
-        <p className="mt-2 text-2xl font-bold">{summary?.warehouseManpower?.["13"] ?? 0}</p>
+      <Card className="p-4 border bg-card shadow-xs">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Gudang 13</p>
+        <p className="text-[11px] text-muted-foreground">Bulan ini</p>
+        <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["13"] ?? 0}</p>
       </Card>
-      <Card className="p-5 border-l-4" style={{ borderLeftColor: WAREHOUSE_COLORS["5"] }}>
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Gudang 5</p>
-        <p className="text-xs text-muted-foreground">Bulan ini</p>
-        <p className="mt-2 text-2xl font-bold">{summary?.warehouseManpower?.["5"] ?? 0}</p>
+      <Card className="p-4 border bg-card shadow-xs">
+        <p className="text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">Gudang 5</p>
+        <p className="text-[11px] text-muted-foreground">Bulan ini</p>
+        <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["5"] ?? 0}</p>
       </Card>
-      <Card className="p-5 border-l-4" style={{ borderLeftColor: WAREHOUSE_COLORS["1"] }}>
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Gudang 1</p>
-        <p className="text-xs text-muted-foreground">Bulan ini</p>
-        <p className="mt-2 text-2xl font-bold">{summary?.warehouseManpower?.["1"] ?? 0}</p>
+      <Card className="p-4 border bg-card shadow-xs">
+        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">Gudang 1</p>
+        <p className="text-[11px] text-muted-foreground">Bulan ini</p>
+        <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["1"] ?? 0}</p>
       </Card>
     </div>
     <Card className="p-5">

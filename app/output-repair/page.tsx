@@ -95,7 +95,6 @@ export default function OutputRepairPage() {
     });
   }, [reportsQuery.data, filterFrom, filterTo, shiftFilter, searchTerm]);
 
-  // Key metrics summary
   const metrics = useMemo(() => {
     let totalOk = 0;
     let totalNg = 0;
@@ -210,11 +209,11 @@ export default function OutputRepairPage() {
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-blue-700 dark:text-blue-400 md:text-3xl">
-            <Wrench className="h-6 w-6 md:h-8 md:w-8" />
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            <Wrench className="h-7 w-7 text-primary" />
             Output Repair Pipa
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Laporan hasil perbaikan pipa (Qty OK &amp; Qty NG) per operator dan per shift.
           </p>
         </div>
@@ -233,7 +232,6 @@ export default function OutputRepairPage() {
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Upload className="mr-1.5 h-4 w-4" />
             {isImporting ? "Mengimpor..." : "Import Excel / CSV"}
@@ -255,48 +253,48 @@ export default function OutputRepairPage() {
 
       {/* METRIC CARDS */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-5 border-l-4 border-l-emerald-500">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Total Qty OK</p>
-            <div className="rounded-full bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-              <CheckCircle2 className="h-5 w-5" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Qty OK</p>
+            <div className="rounded-md bg-emerald-50 dark:bg-emerald-950 p-2 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{metrics.totalOk.toLocaleString("id-ID")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Batang pipa lolos perbaikan</p>
+          <p className="mt-2 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{metrics.totalOk.toLocaleString("id-ID")}</p>
+          <p className="text-[11px] text-muted-foreground">Batang pipa lolos perbaikan</p>
         </Card>
 
-        <Card className="p-5 border-l-4 border-l-rose-500">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Qty NG / NCR</p>
-            <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
-              <XCircle className="h-5 w-5" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Qty NG / NCR</p>
+            <div className="rounded-md bg-rose-50 dark:bg-rose-950 p-2 text-rose-600 dark:text-rose-400">
+              <XCircle className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{metrics.totalNg.toLocaleString("id-ID")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Batang pipa tidak lolos (defect)</p>
+          <p className="mt-2 text-2xl font-extrabold text-rose-600 dark:text-rose-400">{metrics.totalNg.toLocaleString("id-ID")}</p>
+          <p className="text-[11px] text-muted-foreground">Batang pipa tidak lolos (defect)</p>
         </Card>
 
-        <Card className="p-5 border-l-4 border-l-blue-500">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Total Repair Processed</p>
-            <div className="rounded-full bg-blue-100 p-2 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-              <Layers className="h-5 w-5" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Processed</p>
+            <div className="rounded-md bg-primary/10 p-2 text-primary">
+              <Layers className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{metrics.totalPcs.toLocaleString("id-ID")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Total batang pipa diproses</p>
+          <p className="mt-2 text-2xl font-extrabold text-foreground">{metrics.totalPcs.toLocaleString("id-ID")}</p>
+          <p className="text-[11px] text-muted-foreground">Total batang pipa diproses</p>
         </Card>
 
-        <Card className="p-5 border-l-4 border-l-purple-500">
+        <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Tingkat Keberhasilan OK</p>
-            <div className="rounded-full bg-purple-100 p-2 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-              <BarChart3 className="h-5 w-5" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tingkat Keberhasilan</p>
+            <div className="rounded-md bg-primary/10 p-2 text-primary">
+              <BarChart3 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{metrics.efficiencyRate}%</p>
-          <p className="mt-1 text-xs text-muted-foreground">Persentase Qty OK dari total perbaikan</p>
+          <p className="mt-2 text-2xl font-extrabold text-foreground">{metrics.efficiencyRate}%</p>
+          <p className="text-[11px] text-muted-foreground">Persentase Qty OK</p>
         </Card>
       </div>
 
@@ -305,8 +303,8 @@ export default function OutputRepairPage() {
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-bold text-foreground md:text-lg flex items-center gap-2">
-                <Wrench className="h-5 w-5 text-blue-600" />
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-primary" />
                 Daftar Transaksi Output Repair
               </h2>
               <p className="text-xs text-muted-foreground">Menampilkan {filteredReports.length} transaksi perbaikan</p>
@@ -364,7 +362,7 @@ export default function OutputRepairPage() {
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b bg-muted/50 text-xs font-medium text-muted-foreground">
+              <thead className="border-b bg-muted/40 text-xs font-semibold text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Tanggal</th>
                   <th className="px-4 py-3">Customer</th>
@@ -386,7 +384,7 @@ export default function OutputRepairPage() {
                     <td className="px-4 py-3 text-xs text-muted-foreground">{r.dimensions}</td>
                     <td className="px-4 py-3 font-medium">{r.operatorName}</td>
                     <td className="px-4 py-3 text-xs">
-                      <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-950 px-2.5 py-0.5 font-medium text-blue-700 dark:text-blue-300">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary">
                         {formatShift(r.shift)}
                       </span>
                     </td>
