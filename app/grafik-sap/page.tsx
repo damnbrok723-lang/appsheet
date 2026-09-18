@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 import { BarChart3, Download, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -145,13 +146,33 @@ export default function GrafikSapPage() {
     setIsImporting(true);
     toast.loading("Mengimpor Control Daily Repair by SAP...", { id: "import-control" });
     try {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await fetch("/api/control-daily-repair", { method: "POST", body });
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || `Import gagal (HTTP ${response.status})`);
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+      const sheetJobs = [
+        { names: ["stok grade c", "stok grade", "stok ncr"], hint: "stok" },
+        { names: ["repair", "output repair"], hint: "repair" },
+        { names: ["mp repair", "mprepair", "monitoring"], hint: "mp repair" },
+      ];
+      const results = [];
+      for (const job of sheetJobs) {
+        const sheetName = workbook.SheetNames.find((name) => job.names.includes(name.trim().toLowerCase()));
+        if (!sheetName) continue;
+        const sheetWorkbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(sheetWorkbook, workbook.Sheets[sheetName], sheetName);
+        const bytes = XLSX.write(sheetWorkbook, { bookType: "xlsx", type: "array" });
+        const body = new FormData();
+        body.append("file", new File([bytes], `${sheetName}.xlsx`, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+        body.append("sheetHint", job.hint);
+        const response = await fetch("/api/control-daily-repair", { method: "POST", body });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || `Import ${sheetName} gagal (HTTP ${response.status})`);
+        results.push(result.data);
       }
+      if (!results.length) throw new Error("Sheet SAP yang didukung tidak ditemukan");
+      const result = results.reduce((total, current) => ({
+        stockImported: total.stockImported + (current.stockImported ?? 0),
+        repairImported: total.repairImported + (current.repairImported ?? 0),
+        manpowerImported: total.manpowerImported + (current.manpowerImported ?? 0),
+      }), { stockImported: 0, repairImported: 0, manpowerImported: 0 });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["grafik-sap-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["grafik-sap-monitoring"] }),

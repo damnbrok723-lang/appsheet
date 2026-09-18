@@ -108,9 +108,15 @@ export async function POST(request: Request) {
     if (file.size > 20 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 20 MB" }, { status: 400 });
 
     const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+    const requestedSheet = textValue(formData.get("sheetHint")).toLowerCase();
     let stockSheet = workbook.Sheets[findSheet(workbook, ["stok grade c", "stok grade", "stok ncr"]) ?? ""];
     let repairSheet = workbook.Sheets[findSheet(workbook, ["repair", "output repair"]) ?? ""];
     let manpowerSheet = workbook.Sheets[findSheet(workbook, ["mp repair", "mprepair", "monitoring"]) ?? ""];
+    if (requestedSheet) {
+      stockSheet = requestedSheet.includes("stok") ? stockSheet : undefined;
+      repairSheet = requestedSheet.includes("repair") && !requestedSheet.includes("mp") ? repairSheet : undefined;
+      manpowerSheet = requestedSheet.includes("mp") || requestedSheet.includes("monitoring") ? manpowerSheet : undefined;
+    }
     const firstSheet = workbook.Sheets[workbook.SheetNames[0] ?? ""];
     const firstRows = firstSheet ? rowValues(firstSheet) : [];
     if (firstRows.length && !stockSheet && !repairSheet && !manpowerSheet) {
