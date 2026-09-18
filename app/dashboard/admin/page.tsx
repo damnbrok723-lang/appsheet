@@ -7,8 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Users, FolderKanban, Clock, BarChart3, FileText } from "lucide-react";
+import { UserPermissionsDialog } from "@/components/admin/user-permissions-dialog";
 
-type AdminUser = { id: string; name: string; email: string; role: string; status: string };
+type AdminUser = { id: string; name: string; email: string; role: string; status: string; permissions?: string[] };
 type AdminDepartment = { id: string; name: string; description?: string | null };
 type AdminTeam = { id: string; name: string; departmentId: string };
 
@@ -78,7 +79,10 @@ export default function AdminDashboardPage() {
                       <p className="font-medium">{user.name}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
-                    <Badge variant={user.status === "ACTIVE" ? "success" : "warning"}>{user.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={user.status === "ACTIVE" ? "success" : "warning"}>{user.status}</Badge>
+                      <UserPermissionsDialog user={user} />
+                    </div>
                   </div>
                 ))}
               </div>

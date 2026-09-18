@@ -16,12 +16,21 @@ export async function GET() {
   const role = (session.user as { role?: string }).role;
   const entryWhere = role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string };
 
-  const [entries, production] = await Promise.all([
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const monthWhere = entryWhere ? { ...entryWhere, date: { gte: startOfMonth, lte: endOfMonth } } : { date: { gte: startOfMonth, lte: endOfMonth } };
+
+  const [entries, entriesThisMonth, production] = await Promise.all([
     prisma.monitoringEntry.findMany({
       where: entryWhere,
       orderBy: { date: "desc" },
       take: 30,
       select: { id: true, date: true, shift: true, operatorCount: true, warehouse: true, teamLeader: true },
+    }),
+    prisma.monitoringEntry.findMany({
+      where: monthWhere,
+      select: { operatorCount: true, warehouse: true },
     }),
     prisma.productionReport.aggregate({ where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string }, _sum: { qtyOk: true, qtyNg: true } }),
   ]);
@@ -29,6 +38,11 @@ export async function GET() {
   const qtyOk = production._sum.qtyOk ?? 0;
   const qtyNg = production._sum.qtyNg ?? 0;
   const totalProduction = qtyOk + qtyNg;
+
+  const totalMonthlyManpower = entriesThisMonth.reduce((t, e) => t + e.operatorCount, 0);
+  const warehouseManpower = { "1": 0, "5": 0, "13": 0 } as Record<string, number>;
+  for (const e of entriesThisMonth) { warehouseManpower[e.warehouse] = (warehouseManpower[e.warehouse] ?? 0) + e.operatorCount; }
+
   return Response.json({
     success: true,
     data: {
@@ -38,6 +52,8 @@ export async function GET() {
         qtyOk,
         qtyNg,
         okPercentage: totalProduction === 0 ? 0 : Math.round((qtyOk / totalProduction) * 1000) / 10,
+        totalMonthlyManpower,
+        warehouseManpower,
       },
     },
   }, { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" } });

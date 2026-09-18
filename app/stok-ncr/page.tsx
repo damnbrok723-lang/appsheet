@@ -73,11 +73,12 @@ export default function StokNcrPage() {
   });
 
   const userRole = (sessionQuery.data?.user?.role as string) || "EMPLOYEE";
+  const userPermissions = (sessionQuery.data?.user as any)?.permissions as string[] | undefined;
 
-  const showPcsCard = useCardPermission("ncr_pcs_total", userRole);
-  const showDocsCard = useCardPermission("ncr_documents", userRole);
-  const showCustomersCard = useCardPermission("ncr_customers", userRole);
-  const showDefectCasesCard = useCardPermission("ncr_defect_cases", userRole);
+  const showPcsCard = useCardPermission("ncr_pcs_total", userRole, userPermissions);
+  const showDocsCard = useCardPermission("ncr_documents", userRole, userPermissions);
+  const showCustomersCard = useCardPermission("ncr_customers", userRole, userPermissions);
+  const showDefectCasesCard = useCardPermission("ncr_defect_cases", userRole, userPermissions);
 
   const reportsQuery = useQuery({
     queryKey: ["production-reports"],

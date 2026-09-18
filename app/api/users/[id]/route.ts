@@ -10,6 +10,7 @@ const updateUserSchema = z.object({
   departmentId: z.string().optional(),
   teamId: z.string().optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).optional(),
+  permissions: z.array(z.string()).optional(),
 });
 
 export async function GET(

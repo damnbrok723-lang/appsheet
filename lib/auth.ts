@@ -36,16 +36,21 @@ export const authConfig: AuthConfig = {
           name: user.name,
           email: user.email,
           role: user.roleRef.name,
+          permissions: user.permissions,
         };
       },
     }),
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+        token.permissions = (user as { permissions?: any }).permissions;
+      }
+      if (trigger === "update" && session?.permissions) {
+        token.permissions = session.permissions;
       }
       return token;
     },
@@ -53,6 +58,7 @@ export const authConfig: AuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
+        (session.user as { permissions?: any }).permissions = token.permissions;
       }
       return session;
     },

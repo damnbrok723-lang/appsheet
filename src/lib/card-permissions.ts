@@ -11,7 +11,12 @@ export type CardId =
   | "reports_qty_ng"
   | "reports_input_form"
   | "reports_export"
-  | "reports_reviewer_actions";
+  | "reports_reviewer_actions"
+  | "nav_dashboard"
+  | "nav_stok_ncr"
+  | "nav_repair"
+  | "nav_laporan"
+  | "nav_admin";
 
 // Default permission mappings per role
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
@@ -25,6 +30,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "reports_input_form",
     "reports_export",
     "reports_reviewer_actions",
+    "nav_dashboard",
+    "nav_stok_ncr",
+    "nav_repair",
+    "nav_laporan",
+    "nav_admin",
   ],
   MANAGER: [
     "ncr_pcs_total",
@@ -35,6 +45,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "reports_qty_ng",
     "reports_export",
     "reports_reviewer_actions",
+    "nav_dashboard",
+    "nav_stok_ncr",
+    "nav_repair",
+    "nav_laporan",
   ],
   EMPLOYEE: [
     "ncr_pcs_total",
@@ -42,6 +56,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "reports_qty_ok",
     "reports_qty_ng",
     "reports_input_form",
+    "nav_dashboard",
+    "nav_stok_ncr",
+    "nav_repair",
+    "nav_laporan",
   ],
 };
 
@@ -64,25 +82,29 @@ export function saveRolePermissions(permissions: Record<string, CardId[]>) {
   } catch {}
 }
 
-export function useCardPermission(cardId: CardId, userRole?: string): boolean {
+export function hasPermission(cardId: CardId, userRole?: string, userPermissions?: string[] | null): boolean {
+  if (userPermissions && Array.isArray(userPermissions)) {
+    return userPermissions.includes(cardId);
+  }
+  const role = userRole || "EMPLOYEE";
+  const perms = getRolePermissions();
+  const rolePerms = perms[role] || DEFAULT_ROLE_PERMISSIONS[role] || [];
+  return rolePerms.includes(cardId);
+}
+
+export function useCardPermission(cardId: CardId, userRole?: string, userPermissions?: string[] | null): boolean {
   const [allowed, setAllowed] = useState<boolean>(() => {
-    const role = userRole || "EMPLOYEE";
-    const perms = getRolePermissions();
-    const rolePerms = perms[role] || DEFAULT_ROLE_PERMISSIONS[role] || [];
-    return rolePerms.includes(cardId);
+    return hasPermission(cardId, userRole, userPermissions);
   });
 
   useEffect(() => {
     function update() {
-      const role = userRole || "EMPLOYEE";
-      const perms = getRolePermissions();
-      const rolePerms = perms[role] || DEFAULT_ROLE_PERMISSIONS[role] || [];
-      setAllowed(rolePerms.includes(cardId));
+      setAllowed(hasPermission(cardId, userRole, userPermissions));
     }
     update();
     window.addEventListener("officehub_permissions_updated", update);
     return () => window.removeEventListener("officehub_permissions_updated", update);
-  }, [cardId, userRole]);
+  }, [cardId, userRole, userPermissions]);
 
   return allowed;
 }

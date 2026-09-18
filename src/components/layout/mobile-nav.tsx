@@ -5,16 +5,43 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const mobileItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList },
-  { name: "Repair", href: "/output-repair", icon: Factory },
-  { name: "Laporan", href: "/reports", icon: FileBarChart },
-  { name: "Profil", href: "/profile", icon: User },
+import { useEffect, useState } from "react";
+import { hasPermission, CardId } from "@/lib/card-permissions";
+
+const mobileItems: { name: string; href: string; icon: any; permission?: CardId }[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "nav_dashboard" },
+  { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },
+  { name: "Repair", href: "/output-repair", icon: Factory, permission: "nav_repair" },
+  { name: "Laporan", href: "/reports", icon: FileBarChart, permission: "nav_laporan" },
+  { name: "Profil", href: "/profile", icon: User }, // Always show
 ];
+
+type UserSession = {
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  permissions?: string[];
+};
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [user, setUser] = useState<UserSession | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {});
+  }, []);
+
+  const userRole = user?.role ?? "EMPLOYEE";
+  const userPermissions = user?.permissions;
+  const filteredItems = mobileItems.filter(
+    (item) => !item.permission || hasPermission(item.permission, userRole, userPermissions)
+  );
 
   return (
     <nav
@@ -23,7 +50,7 @@ export function MobileNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex items-center justify-around px-1 py-1">
-        {mobileItems.map((item) => {
+        {filteredItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href)) ||

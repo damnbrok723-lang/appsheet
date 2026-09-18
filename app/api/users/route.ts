@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         select: {
-          id: true, name: true, email: true, role: true, status: true, avatarUrl: true, jobTitle: true,
+          id: true, name: true, email: true, role: true, status: true, avatarUrl: true, jobTitle: true, permissions: true,
           roleRef: { select: { name: true } },
           department: { select: { id: true, name: true } },
           team: { select: { id: true, name: true } },

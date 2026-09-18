@@ -120,15 +120,16 @@ export default function ReportsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; date: string; batch: string; shift: string } | null>(null);
 
-  const currentUser = sessionQuery.data?.user as { id?: string; role?: string } | undefined;
+  const currentUser = sessionQuery.data?.user as { id?: string; role?: string; permissions?: string[] } | undefined;
   const userRole = currentUser?.role || "EMPLOYEE";
+  const userPermissions = currentUser?.permissions;
   const isReviewer = userRole === "ADMIN" || userRole === "MANAGER";
 
-  const showQtyOkCard = useCardPermission("reports_qty_ok", userRole);
-  const showQtyNgCard = useCardPermission("reports_qty_ng", userRole);
-  const showInputFormCard = useCardPermission("reports_input_form", userRole);
-  const showExportCard = useCardPermission("reports_export", userRole);
-  const showReviewerActions = useCardPermission("reports_reviewer_actions", userRole);
+  const showQtyOkCard = useCardPermission("reports_qty_ok", userRole, userPermissions);
+  const showQtyNgCard = useCardPermission("reports_qty_ng", userRole, userPermissions);
+  const showInputFormCard = useCardPermission("reports_input_form", userRole, userPermissions);
+  const showExportCard = useCardPermission("reports_export", userRole, userPermissions);
+  const showReviewerActions = useCardPermission("reports_reviewer_actions", userRole, userPermissions);
 
   // Terapkan filter dari pending ke aktif
   function applyFilter() {
