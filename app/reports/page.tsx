@@ -300,15 +300,16 @@ export default function ReportsPage() {
   });
 
   const chartData = Object.values(
-    filteredReports.reduce<Record<string, { date: string; ok: number; ng: number }>>((groups, report) => {
+    filteredReports.reduce<Record<string, { rawDate: string; date: string; ok: number; ng: number }>>((groups, report) => {
+      const rawDate = report.reportDate.slice(0, 10);
       const date = new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
-      const current = groups[date] ?? { date, ok: 0, ng: 0 };
+      const current = groups[rawDate] ?? { rawDate, date, ok: 0, ng: 0 };
       current.ok += report.qtyOk;
       current.ng += report.qtyNg;
-      groups[date] = current;
+      groups[rawDate] = current;
       return groups;
     }, {})
-  ).reverse();
+  ).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
 
   const totalOk = filteredReports.reduce((total, report) => total + report.qtyOk, 0);
   const totalNg = filteredReports.reduce((total, report) => total + report.qtyNg, 0);
