@@ -688,14 +688,26 @@ export default function ReportsPage() {
             </div>
           ) : (
             <>
-              <div className="mb-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-md border border-emerald-300 bg-emerald-100/60 p-4 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40">
-                  <p className="text-sm font-semibold text-emerald-950 dark:text-emerald-200">Total Qty OK</p>
-                  <p className="text-2xl font-extrabold text-emerald-950 dark:text-emerald-100">{totalOk.toLocaleString("id-ID")}</p>
+              <div className="mb-5 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-200 bg-white p-4 shadow-xs dark:border-emerald-900/50 dark:bg-slate-900">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Total Qty OK</p>
+                    <div className="rounded-full bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                      <FileBarChart className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{totalOk.toLocaleString("id-ID")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Total batang pipa lolos standard</p>
                 </div>
-                <div className="rounded-md border border-rose-300 bg-rose-100/60 p-4 shadow-sm dark:border-rose-800 dark:bg-rose-950/40">
-                  <p className="text-sm font-semibold text-rose-950 dark:text-rose-200">Total Qty NG</p>
-                  <p className="text-2xl font-extrabold text-rose-950 dark:text-rose-100">{totalNg.toLocaleString("id-ID")}</p>
+                <div className="rounded-xl border border-rose-200 bg-white p-4 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Qty NG</p>
+                    <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
+                      <FileBarChart className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{totalNg.toLocaleString("id-ID")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Total batang pipa defect / repair</p>
                 </div>
               </div>
               <div className="h-72 w-full">

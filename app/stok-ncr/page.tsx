@@ -260,13 +260,15 @@ export default function StokNcrPage() {
 
         {/* METRIK STOK NCR */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-rose-300 bg-rose-100/60 p-5 shadow-sm dark:border-rose-800 dark:bg-rose-950/40">
+          <Card className="rounded-xl border border-rose-200 bg-white p-5 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-rose-950 dark:text-rose-200">Total Pcs NG / NCR</p>
-              <PackageX className="h-5 w-5 text-rose-700 dark:text-rose-400" />
+              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Pcs NG / NCR</p>
+              <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
+                <PackageX className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              </div>
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-rose-950 dark:text-rose-100">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
-            <p className="mt-1 text-xs font-medium text-rose-900 dark:text-rose-300">Batang pipa defect tersimpan</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Batang pipa defect tersimpan</p>
           </Card>
 
           <Card className="p-5">
