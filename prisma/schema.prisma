@@ -306,6 +306,7 @@ model MonitoringEntry {
 
   @@index([date])
   @@index([userId, date])
+  @@index([userId, sourceKey])
   @@map("monitoring_entries")
 }
 
@@ -340,6 +341,7 @@ model ProductionReport {
 
   @@index([reportDate])
   @@index([userId, reportDate])
+  @@index([userId, sourceType, sourceKey])
   @@index([customer])
   @@map("production_reports")
 }

@@ -83,8 +83,11 @@ export default function GrafikSapPage() {
 
   const stockChartData = useMemo(() => {
     const map: Record<string, { warehouse: string; gradeC: number; st: number }> = {};
-    for (const report of (reportsQuery.data ?? []).filter((item) => item.sourceType === "STOCK")) {
-      const warehouse = report.warehouse || "Tanpa Gudang";
+    for (const report of (reportsQuery.data ?? []).filter((item) => {
+      const hasStockCategory = (item.stockGrade ?? "").toLowerCase().includes("c") || (item.stockType ?? "").toLowerCase() === "st";
+      return item.sourceType === "STOCK" && Boolean(item.warehouse) && (item.tonnageKg ?? 0) > 0 && hasStockCategory;
+    })) {
+      const warehouse = report.warehouse as string;
       const current = map[warehouse] ?? { warehouse, gradeC: 0, st: 0 };
       const tonnage = report.tonnageKg ?? 0;
       if ((report.stockGrade ?? "").toLowerCase().includes("c")) current.gradeC += tonnage;

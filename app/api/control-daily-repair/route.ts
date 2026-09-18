@@ -64,7 +64,7 @@ function stableKey(parts: unknown[]) {
 }
 
 function uniqueRows<T extends { sourceKey: string }>(rows: T[]) {
-  return [...new Map(rows.map((row) => [row.sourceKey, row])).values()];
+  return [...new Map(rows.map((row, index) => [row.sourceKey || `ROW-${index + 1}`, row])).values()];
 }
 
 async function syncProductionRows(rows: ProductionImportRow[], userId: string, sourceType: string) {
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
     if (stockSheet) {
       const rows = rowValues(stockSheet);
-      const data = rows.map((row, index) => {
+      const data = rows.filter((row) => textValue(row.sloc || row.materialnumber || row.batch)).map((row, index) => {
         const batch = textValue(row.batch || `STOCK-${index + 1}`);
         const qtyNg = Math.max(0, Math.round(numberValue(row.unrestrictedpcs)));
         return {
@@ -161,7 +161,7 @@ export async function POST(request: Request) {
 
     if (repairSheet) {
       const rows = rowValues(repairSheet);
-      const data = rows.map((row, index) => ({
+      const data = rows.filter((row) => textValue(row.order || row.materialdoc || row.batch)).map((row, index) => ({
         sourceKey: stableKey(["REPAIR", row.order, row.materialdoc, row.batch, row.mvt, row.postdate, row.sloc]),
         reportDate: parseDateValue(row.postdate || row.docdate),
         customer: textValue(row.name) || "Customer Umum",
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
 
     if (manpowerSheet) {
       const rows = rowValues(manpowerSheet);
-      const data = rows.map((row) => ({
+      const data = rows.filter((row) => textValue(row.tanggal || row.date) && textValue(row.gudang || row.warehouse)).map((row) => ({
         sourceKey: stableKey(["MP", row.tanggal || row.date, row.shift, row.gudang || row.warehouse]),
         date: parseDateValue(row.tanggal || row.date),
         shift: shiftValue(row.shift),
