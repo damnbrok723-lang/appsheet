@@ -179,7 +179,7 @@ export default function GrafikSapPage() {
         results.push(result.data ?? {});
       }
       if (!results.length) throw new Error("Sheet SAP yang didukung tidak ditemukan");
-      const result = results.reduce((total, current) => ({
+      const result = results.reduce<ImportCounts>((total, current) => ({
         stockImported: total.stockImported + (current.stockImported ?? 0),
         repairImported: total.repairImported + (current.repairImported ?? 0),
         manpowerImported: total.manpowerImported + (current.manpowerImported ?? 0),
