@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
+import { useCardPermission } from "@/lib/card-permissions";
 
 type Report = {
   id: string;
@@ -65,6 +66,19 @@ export default function StokNcrPage() {
   const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; ncr: string; batch: string } | null>(null);
 
+  const sessionQuery = useQuery({
+    queryKey: ["auth-session"],
+    queryFn: async () => (await fetch("/api/auth/session")).json(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const userRole = (sessionQuery.data?.user?.role as string) || "EMPLOYEE";
+
+  const showPcsCard = useCardPermission("ncr_pcs_total", userRole);
+  const showDocsCard = useCardPermission("ncr_documents", userRole);
+  const showCustomersCard = useCardPermission("ncr_customers", userRole);
+  const showDefectCasesCard = useCardPermission("ncr_defect_cases", userRole);
+
   const reportsQuery = useQuery({
     queryKey: ["production-reports"],
     queryFn: async () => {
@@ -73,6 +87,8 @@ export default function StokNcrPage() {
       return (await res.json()).data.reports as Report[];
     },
     staleTime: 0,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {
@@ -260,43 +276,51 @@ export default function StokNcrPage() {
 
         {/* METRIK STOK NCR */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="rounded-xl border border-rose-200 bg-white p-5 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Pcs NG / NCR</p>
-              <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
-                <PackageX className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+          {showPcsCard && (
+            <Card className="rounded-xl border border-rose-200 bg-white p-5 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Pcs NG / NCR</p>
+                <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
+                  <PackageX className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                </div>
               </div>
-            </div>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Batang pipa defect tersimpan</p>
-          </Card>
+              <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Batang pipa defect tersimpan</p>
+            </Card>
+          )}
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">Dokumen NCR</p>
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-            </div>
-            <p className="mt-2 text-3xl font-bold">{stats.totalNcrDocs}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Total laporan kasus NCR</p>
-          </Card>
+          {showDocsCard && (
+            <Card className="p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Dokumen NCR</p>
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              </div>
+              <p className="mt-2 text-3xl font-bold">{stats.totalNcrDocs}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Total laporan kasus NCR</p>
+            </Card>
+          )}
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">Customer Terpengaruh</p>
-              <FileSpreadsheet className="h-5 w-5 text-blue-500" />
-            </div>
-            <p className="mt-2 text-3xl font-bold">{stats.totalCustomers}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Customer pemilik batch NCR</p>
-          </Card>
+          {showCustomersCard && (
+            <Card className="p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Customer Terpengaruh</p>
+                <FileSpreadsheet className="h-5 w-5 text-blue-500" />
+              </div>
+              <p className="mt-2 text-3xl font-bold">{stats.totalCustomers}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Customer pemilik batch NCR</p>
+            </Card>
+          )}
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">Total Kasus Defect</p>
-              <ShieldAlert className="h-5 w-5 text-purple-500" />
-            </div>
-            <p className="mt-2 text-3xl font-bold">{stats.totalRecords}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Item tercatat dalam database</p>
-          </Card>
+          {showDefectCasesCard && (
+            <Card className="p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Total Kasus Defect</p>
+                <ShieldAlert className="h-5 w-5 text-purple-500" />
+              </div>
+              <p className="mt-2 text-3xl font-bold">{stats.totalRecords}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Item tercatat dalam database</p>
+            </Card>
+          )}
         </div>
 
         {/* GRAFIK DISTRIBUSI NCR */}

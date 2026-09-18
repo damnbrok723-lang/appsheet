@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
+import { useCardPermission } from "@/lib/card-permissions";
 
 type Report = {
   id: string;
@@ -99,8 +100,14 @@ export default function ReportsPage() {
   const queryClient = useQueryClient();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const reportsQuery = useQuery({ queryKey: ["production-reports"], queryFn: fetchReports, staleTime: 0 });
-  const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 10 * 60 * 1000 });
+  const reportsQuery = useQuery({
+    queryKey: ["production-reports"],
+    queryFn: fetchReports,
+    staleTime: 0,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+  });
+  const sessionQuery = useQuery({ queryKey: ["auth-session"], queryFn: async () => (await fetch("/api/auth/session")).json(), staleTime: 5 * 60 * 1000 });
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterFrom, setFilterFrom] = useState("");
@@ -110,7 +117,14 @@ export default function ReportsPage() {
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; date: string; batch: string; shift: string } | null>(null);
 
   const currentUser = sessionQuery.data?.user as { id?: string; role?: string } | undefined;
-  const isReviewer = currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
+  const userRole = currentUser?.role || "EMPLOYEE";
+  const isReviewer = userRole === "ADMIN" || userRole === "MANAGER";
+
+  const showQtyOkCard = useCardPermission("reports_qty_ok", userRole);
+  const showQtyNgCard = useCardPermission("reports_qty_ng", userRole);
+  const showInputFormCard = useCardPermission("reports_input_form", userRole);
+  const showExportCard = useCardPermission("reports_export", userRole);
+  const showReviewerActions = useCardPermission("reports_reviewer_actions", userRole);
 
   // Reset pagination on filter change
   useEffect(() => {
@@ -436,19 +450,20 @@ export default function ReportsPage() {
         </div>
 
       {/* FORM INPUT LAPORAN */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">{editingId ? "Edit Laporan" : "Input Laporan"}</h2>
-            {editingId && (
-              <Button type="button" variant="outline" size="sm" onClick={() => { setEditingId(null); setForm(initialForm); }}>
-                Batal Edit
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
+      {showInputFormCard && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">{editingId ? "Edit Laporan" : "Input Laporan"}</h2>
+              {editingId && (
+                <Button type="button" variant="outline" size="sm" onClick={() => { setEditingId(null); setForm(initialForm); }}>
+                  Batal Edit
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
             <label className="space-y-2 text-sm font-medium">
               Tanggal
               <Input type="date" required {...field("reportDate")} />
@@ -607,7 +622,8 @@ export default function ReportsPage() {
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* FILTER TANGGAL */}
       <Card>
@@ -695,26 +711,30 @@ export default function ReportsPage() {
           ) : (
             <>
               <div className="mb-5 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-emerald-200 bg-white p-4 shadow-xs dark:border-emerald-900/50 dark:bg-slate-900">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Total Qty OK</p>
-                    <div className="rounded-full bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-                      <FileBarChart className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                {showQtyOkCard && (
+                  <div className="rounded-xl border border-emerald-200 bg-white p-4 shadow-xs dark:border-emerald-900/50 dark:bg-slate-900">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Total Qty OK</p>
+                      <div className="rounded-full bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                        <FileBarChart className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
                     </div>
+                    <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{totalOk.toLocaleString("id-ID")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Total batang pipa lolos standard</p>
                   </div>
-                  <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{totalOk.toLocaleString("id-ID")}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Total batang pipa lolos standard</p>
-                </div>
-                <div className="rounded-xl border border-rose-200 bg-white p-4 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Qty NG</p>
-                    <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
-                      <FileBarChart className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                )}
+                {showQtyNgCard && (
+                  <div className="rounded-xl border border-rose-200 bg-white p-4 shadow-xs dark:border-rose-900/50 dark:bg-slate-900">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Total Qty NG</p>
+                      <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
+                        <FileBarChart className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                      </div>
                     </div>
+                    <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{totalNg.toLocaleString("id-ID")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Total batang pipa defect / repair</p>
                   </div>
-                  <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-slate-50">{totalNg.toLocaleString("id-ID")}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Total batang pipa defect / repair</p>
-                </div>
+                )}
               </div>
               <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
