@@ -341,7 +341,7 @@ export default function StokNcrPage() {
                         tick={{ fontSize: 10, fill: "currentColor" }}
                         tickFormatter={(val: string) => (val.length > 18 ? `${val.slice(0, 16)}…` : val)}
                       />
-                      <Tooltip formatter={(value: number) => [`${value.toLocaleString("id-ID")} Pcs`, "Qty NG"]} />
+                      <Tooltip formatter={(value) => [`${(Number(value) || 0).toLocaleString("id-ID")} Pcs`, "Qty NG"]} />
                       <Bar dataKey="count" name="Qty NG (Pcs)" fill="#be123c" radius={[0, 4, 4, 0]} barSize={18} />
                     </BarChart>
                   </ResponsiveContainer>
