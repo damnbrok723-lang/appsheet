@@ -149,7 +149,9 @@ export default function GrafikSapPage() {
       body.append("file", file);
       const response = await fetch("/api/control-daily-repair", { method: "POST", body });
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.message || "Gagal mengimpor workbook SAP");
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || `Import gagal (HTTP ${response.status})`);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["grafik-sap-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["grafik-sap-monitoring"] }),

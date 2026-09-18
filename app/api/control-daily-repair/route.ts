@@ -3,6 +3,8 @@ import { getSession } from "@/lib/permissions";
 import type { Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
 
+export const maxDuration = 60;
+
 type ProductionImportRow = Omit<Prisma.ProductionReportUncheckedCreateInput, "userId"> & { sourceKey: string };
 type MonitoringImportRow = Omit<Prisma.MonitoringEntryUncheckedCreateInput, "userId"> & { sourceKey: string };
 
@@ -207,8 +209,10 @@ export async function POST(request: Request) {
       success: true,
       data: { stockImported, repairImported, manpowerImported },
     }, { status: 201 });
-  } catch {
-    return Response.json({ success: false, message: "Gagal mengimpor Control Daily Repair" }, { status: 500 });
+  } catch (error) {
+    console.error("Control Daily Repair import failed", error);
+    const message = error instanceof Error ? error.message : "Gagal mengimpor Control Daily Repair";
+    return Response.json({ success: false, message: `Gagal mengimpor Control Daily Repair: ${message.slice(0, 240)}` }, { status: 500 });
   }
 }
 
