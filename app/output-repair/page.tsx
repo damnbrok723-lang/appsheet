@@ -91,7 +91,7 @@ export default function OutputRepairPage() {
   const filteredReports = useMemo(() => {
     const all = reportsQuery.data ?? [];
     return all.filter((r) => {
-      if (r.sourceType === "STOCK") return false;
+      if (r.sourceType === "STOCK" || r.sourceType === "DEMO") return false;
       const date = r.reportDate.slice(0, 10);
       if (filterFrom && date < filterFrom) return false;
       if (filterTo && date > filterTo) return false;

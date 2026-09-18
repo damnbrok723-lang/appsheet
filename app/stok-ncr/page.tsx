@@ -149,7 +149,7 @@ export default function StokNcrPage() {
   // Filter khusus data yang memiliki stok NCR / Qty NG > 0
   const ncrReports = useMemo(() => {
     const all = reportsQuery.data ?? [];
-    return all.filter((r) => r.sourceType === "STOCK" || (r.sourceType !== "OUTPUT_REPAIR" && (r.qtyNg > 0 || (r.ncrNumber && r.ncrNumber.trim() !== ""))));
+    return all.filter((r) => r.sourceType === "STOCK" || (!r.sourceType || r.sourceType === "MANUAL") && (r.qtyNg > 0 || (r.ncrNumber && r.ncrNumber.trim() !== "")));
   }, [reportsQuery.data]);
 
   const filteredReports = useMemo(() => {

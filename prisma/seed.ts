@@ -228,7 +228,7 @@ async function main() {
   });
   await prisma.productionReport.upsert({
     where: { id: "demo-production-report" },
-    update: { customer: "PT Nusantara", qtyOk: 420, qtyNg: 8, ncrNumber: "NCR-2609-000", status: "APPROVED" },
+    update: { customer: "PT Nusantara", qtyOk: 420, qtyNg: 8, ncrNumber: "NCR-2609-000", status: "APPROVED", sourceType: "DEMO" },
     create: {
       id: "demo-production-report",
       userId: manager.id,
@@ -245,6 +245,7 @@ async function main() {
       ncrNumber: "NCR-2609-000",
       status: "APPROVED",
       processNotes: "Demo production report",
+      sourceType: "DEMO",
     },
   });
 
@@ -293,6 +294,7 @@ async function main() {
       qtyNg,
       ngNotes: qtyNg > 10 ? "Pemeriksaan ulang diperlukan pada permukaan produk." : null,
       processNotes: "Data demo untuk pengujian dashboard dan laporan.",
+      sourceType: "DEMO",
       photoData: null,
       status: ["DRAFT", "SUBMITTED", "REVISION", "APPROVED", "REJECTED"][index % 5],
     };
@@ -305,6 +307,12 @@ async function main() {
       create: row,
     })),
   );
+
+  await prisma.document.upsert({
+    where: { id: "demo-document-sap-guide" },
+    update: { name: "Panduan Control Daily Repair SAP.xlsx", description: "Dokumen demo untuk pengujian menu Documents.", filePath: "demo/control-daily-repair-guide.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileSize: 0, uploadedById: admin.id, teamId: devTeam.id },
+    create: { id: "demo-document-sap-guide", name: "Panduan Control Daily Repair SAP.xlsx", description: "Dokumen demo untuk pengujian menu Documents.", filePath: "demo/control-daily-repair-guide.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileSize: 0, uploadedById: admin.id, teamId: devTeam.id },
+  });
 
   console.log(`Seed data created successfully: ${monitoringRows.length} monitoring rows and ${reportRows.length} production reports.`);
 }
