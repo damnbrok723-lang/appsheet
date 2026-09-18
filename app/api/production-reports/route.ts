@@ -18,6 +18,11 @@ const reportSchema = z.object({
   qtyNg: z.coerce.number().int().min(0),
   ngNotes: z.string().trim().max(2000).optional(),
   processNotes: z.string().trim().max(2000).optional(),
+  sourceType: z.enum(["MANUAL", "STOCK", "OUTPUT_REPAIR"]).optional(),
+  warehouse: z.string().trim().max(80).optional(),
+  tonnageKg: z.coerce.number().min(0).optional(),
+  stockGrade: z.string().trim().max(80).optional(),
+  stockType: z.string().trim().max(40).optional(),
   photoData: z.string().max(14_000_000, "Ukuran foto terlalu besar").optional(),
 }).superRefine((data, context) => {
   if (data.qtyNg > 0 && !data.ncrNumber?.trim()) {
@@ -27,6 +32,20 @@ const reportSchema = z.object({
 
 function textValue(value: unknown) {
   return String(value ?? "").trim();
+}
+
+function numberValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const normalized = textValue(value).replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function warehouseValue(value: unknown) {
+  const raw = textValue(value);
+  if (!raw) return undefined;
+  const match = raw.match(/\d+/);
+  return match ? `Gd ${Number(match[0])}` : raw;
 }
 
 function parseDateValue(value: unknown): Date {
@@ -111,6 +130,8 @@ async function importReports(request: Request, userId: string) {
 
   // Ambil sheetHint dari form jika ada (misal "repair" untuk Output Repair, "stok grade c" untuk Stok NCR)
   const sheetHint = (formData.get("sheetHint") as string | null)?.trim().toLowerCase() ?? "";
+  const isStockImport = sheetHint.includes("stok");
+  const isRepairImport = sheetHint.includes("repair");
 
   // Cari sheet yang tepat: jika ada sheetHint → prioritaskan, lalu fallback ke auto-detect
   const sheetName =
@@ -136,6 +157,11 @@ async function importReports(request: Request, userId: string) {
       const rawDate = normalized.tanggalproduksi || normalized.tanggal || normalized.postdate || normalized.entrydate || normalized.docdate || normalized.requesteddelivdate;
       const reportDate = parseDateValue(rawDate);
       const customer = textValue(normalized.customer || normalized.pelanggan || normalized.name || "Customer Umum");
+      const sourceType = isStockImport ? "STOCK" : isRepairImport ? "OUTPUT_REPAIR" : "MANUAL";
+      const warehouse = warehouseValue(normalized.gudang || normalized.sloc);
+      const tonnageKg = numberValue(normalized.tonasekg || normalized.unrestrictedkg);
+      const stockGrade = textValue(normalized.grade) || undefined;
+      const stockType = textValue(normalized.stlt) || undefined;
       
       let dimensions = textValue(normalized.dimensi || normalized.lokasipipa || normalized.panjangpipa || normalized.lengthside);
       if (!dimensions && (normalized.diammm || normalized.diameter || normalized.length || normalized.tebal)) {
@@ -148,8 +174,9 @@ async function importReports(request: Request, userId: string) {
       const operatorTypes = parseOperatorTypes(normalized.jenisoperator || normalized.tipeoperator);
       const operatorName = textValue(normalized.username || normalized.namapenanggungjawabrepair || normalized.namaoperator || normalized.operator || normalized.userentry || "Operator");
       const shift = shiftValue(normalized.shift || normalized.sloc || normalized.gudang);
-      const qtyOk = Math.max(0, Number(normalized.qtystardardok || normalized.qtyok || normalized.ok || normalized.grqtypcs || normalized.qtypcs || 0) || 0);
-      const qtyNg = Math.max(0, Number(normalized.unrestrictedpcs || normalized.qtyngrepair || normalized.qtyng || normalized.ng || normalized.giqtypcs || normalized.qtyrepairst || 0) || 0);
+      const repairQty = numberValue(normalized.qtypcs);
+      const qtyOk = Math.max(0, Math.round(numberValue(isRepairImport ? repairQty : normalized.qtystardardok || normalized.qtyok || normalized.ok || normalized.grqtypcs)));
+      const qtyNg = Math.max(0, Math.round(numberValue(isStockImport ? normalized.unrestrictedpcs : normalized.qtyngrepair || normalized.qtyng || normalized.ng || normalized.giqtypcs || normalized.qtyrepairst)));
       let ncrNumber = textValue(normalized.noncr || normalized.ncrnumber || normalized.noncr);
       if (qtyNg > 0 && !ncrNumber) {
         ncrNumber = `NCR-${batchNumber}`;
@@ -171,6 +198,11 @@ async function importReports(request: Request, userId: string) {
         qtyNg,
         ngNotes: ngNotes || undefined,
         processNotes: processNotes || undefined,
+        sourceType,
+        warehouse,
+        tonnageKg: tonnageKg || undefined,
+        stockGrade,
+        stockType,
       };
 
       const result = reportSchema.safeParse(data);
@@ -238,6 +270,11 @@ export async function GET() {
       qtyNg: true,
       ngNotes: true,
       processNotes: true,
+      sourceType: true,
+      warehouse: true,
+      tonnageKg: true,
+      stockGrade: true,
+      stockType: true,
       photoData: true, // Included for lightweight photos, but truncated or checked below
       status: true,
       createdAt: true,

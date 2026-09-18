@@ -42,6 +42,11 @@ type Report = {
   qtyNg: number;
   ngNotes?: string | null;
   processNotes?: string | null;
+  sourceType?: string;
+  warehouse?: string | null;
+  tonnageKg?: number | null;
+  stockGrade?: string | null;
+  stockType?: string | null;
   photoData?: string | null;
   hasPhoto?: boolean;
   status: string;
@@ -136,7 +141,7 @@ export default function StokNcrPage() {
   // Filter khusus data yang memiliki stok NCR / Qty NG > 0
   const ncrReports = useMemo(() => {
     const all = reportsQuery.data ?? [];
-    return all.filter((r) => r.qtyNg > 0 || (r.ncrNumber && r.ncrNumber.trim() !== ""));
+    return all.filter((r) => r.sourceType === "STOCK" || (r.sourceType !== "OUTPUT_REPAIR" && (r.qtyNg > 0 || (r.ncrNumber && r.ncrNumber.trim() !== ""))));
   }, [reportsQuery.data]);
 
   const filteredReports = useMemo(() => {
@@ -200,6 +205,19 @@ export default function StokNcrPage() {
       map[rawDate] = current;
     }
     return Object.values(map).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+  }, [filteredReports]);
+
+  const stockWarehouseChartData = useMemo(() => {
+    const map: Record<string, { warehouse: string; gradeC: number; st: number }> = {};
+    for (const report of filteredReports) {
+      const warehouse = report.warehouse || "Tanpa Gudang";
+      const current = map[warehouse] ?? { warehouse, gradeC: 0, st: 0 };
+      const tonnageKg = report.tonnageKg ?? 0;
+      if ((report.stockGrade ?? "").toLowerCase().includes("c")) current.gradeC += tonnageKg;
+      if ((report.stockType ?? "").toLowerCase() === "st") current.st += tonnageKg;
+      map[warehouse] = current;
+    }
+    return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
   }, [filteredReports]);
 
   const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
@@ -422,6 +440,31 @@ export default function StokNcrPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2>
+            <p className="text-xs text-muted-foreground">Sumber: sheet Stok Grade C, satuan kilogram</p>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80 w-full">
+              {stockWarehouseChartData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stockWarehouseChartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="warehouse" />
+                    <YAxis tickFormatter={(value) => Number(value).toLocaleString("id-ID")} />
+                    <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID", { maximumFractionDigits: 2 })} Kg`, "Tonase"]} />
+                    <Bar dataKey="gradeC" name="Stok Grade C" fill="#e11d48" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="st" name="Stok ST" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data tonase stok</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* DAFTAR STOK NCR & TABEL DATA */}
         <Card>

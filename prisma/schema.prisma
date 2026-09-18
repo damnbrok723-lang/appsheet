@@ -324,6 +324,11 @@ model ProductionReport {
   qtyNg         Int      @map("qty_ng")
   ngNotes       String?  @map("ng_notes")
   processNotes  String?  @map("process_notes")
+  sourceType    String   @default("MANUAL") @map("source_type")
+  warehouse     String?
+  tonnageKg     Float?   @map("tonnage_kg")
+  stockGrade    String?  @map("stock_grade")
+  stockType     String?  @map("stock_type")
   photoData     String?  @map("photo_data")
   status        String   @default("DRAFT")
   createdAt     DateTime @default(now()) @map("created_at")

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ExcelJS from "exceljs";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type Report = {
   id: string;
@@ -40,6 +41,8 @@ type Report = {
   qtyNg: number;
   ngNotes?: string | null;
   processNotes?: string | null;
+  sourceType?: string;
+  warehouse?: string | null;
   status: string;
 };
 
@@ -79,6 +82,7 @@ export default function OutputRepairPage() {
   const filteredReports = useMemo(() => {
     const all = reportsQuery.data ?? [];
     return all.filter((r) => {
+      if (r.sourceType === "STOCK") return false;
       const date = r.reportDate.slice(0, 10);
       if (filterFrom && date < filterFrom) return false;
       if (filterTo && date > filterTo) return false;
@@ -113,6 +117,32 @@ export default function OutputRepairPage() {
       totalBatches: filteredReports.length,
       efficiencyRate,
     };
+  }, [filteredReports]);
+
+  const dailyOutputChartData = useMemo(() => {
+    const map: Record<string, { rawDate: string; date: string; output: number }> = {};
+    for (const report of filteredReports) {
+      const rawDate = report.reportDate.slice(0, 10);
+      const current = map[rawDate] ?? {
+        rawDate,
+        date: new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }),
+        output: 0,
+      };
+      current.output += report.qtyOk + report.qtyNg;
+      map[rawDate] = current;
+    }
+    return Object.values(map).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+  }, [filteredReports]);
+
+  const warehouseOutputChartData = useMemo(() => {
+    const map: Record<string, { warehouse: string; output: number }> = {};
+    for (const report of filteredReports) {
+      const warehouse = report.warehouse || "Tanpa Gudang";
+      const current = map[warehouse] ?? { warehouse, output: 0 };
+      current.output += report.qtyOk + report.qtyNg;
+      map[warehouse] = current;
+    }
+    return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
   }, [filteredReports]);
 
   const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
@@ -313,6 +343,56 @@ export default function OutputRepairPage() {
           </div>
           <p className="mt-2 text-2xl font-extrabold text-foreground">{metrics.efficiencyRate}%</p>
           <p className="text-[11px] text-muted-foreground">Persentase Qty OK</p>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-semibold">Daily Output Repair</h2>
+            <p className="text-xs text-muted-foreground">Total Qty OK + Qty NG per tanggal</p>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80 w-full">
+              {dailyOutputChartData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dailyOutputChartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} />
+                    <Bar dataKey="output" name="Output Repair" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data output repair</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-semibold">Output Repair per Gudang</h2>
+            <p className="text-xs text-muted-foreground">Total Qty OK + Qty NG berdasarkan gudang</p>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80 w-full">
+              {warehouseOutputChartData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={warehouseOutputChartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="warehouse" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} />
+                    <Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data gudang output repair</div>
+              )}
+            </div>
+          </CardContent>
         </Card>
       </div>
 
