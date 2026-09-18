@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import {
   BarChart3,
   RefreshCw,
   Activity,
+  Download,
+  Upload,
 } from "lucide-react";
 
 type MonitoringEntry = {
@@ -159,6 +162,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button asChild variant="default" size="sm" className="h-8 text-xs font-medium">
+            <Link href="/grafik-sap">
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+              Import SAP
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="h-8 text-xs font-medium">
+            <Link href="/grafik-sap">
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Export SAP
+            </Link>
+          </Button>
           <Button
             variant="outline"
             size="sm"
