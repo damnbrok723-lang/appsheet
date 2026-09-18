@@ -260,13 +260,13 @@ export default function StokNcrPage() {
 
         {/* METRIK STOK NCR */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-rose-200 bg-rose-50/50 p-5 dark:border-rose-900/50 dark:bg-rose-950/20">
+          <Card className="border-rose-300 bg-rose-100/60 p-5 shadow-sm dark:border-rose-800 dark:bg-rose-950/40">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-rose-700 dark:text-rose-300">Total Pcs NG / NCR</p>
-              <PackageX className="h-5 w-5 text-rose-600" />
+              <p className="text-sm font-semibold text-rose-950 dark:text-rose-200">Total Pcs NG / NCR</p>
+              <PackageX className="h-5 w-5 text-rose-700 dark:text-rose-400" />
             </div>
-            <p className="mt-2 text-3xl font-bold text-rose-900 dark:text-rose-100">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
-            <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">Batang pipa defect tersimpan</p>
+            <p className="mt-2 text-3xl font-extrabold text-rose-950 dark:text-rose-100">{stats.totalNgPcs.toLocaleString("id-ID")}</p>
+            <p className="mt-1 text-xs font-medium text-rose-900 dark:text-rose-300">Batang pipa defect tersimpan</p>
           </Card>
 
           <Card className="p-5">
@@ -304,7 +304,7 @@ export default function StokNcrPage() {
               <h2 className="text-base font-semibold">Tren Qty NG / NCR per Tanggal</h2>
             </CardHeader>
             <CardContent>
-              <div className="h-64 w-full">
+              <div className="h-80 w-full">
                 {dateChartData.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={dateChartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
@@ -327,15 +327,22 @@ export default function StokNcrPage() {
               <h2 className="text-base font-semibold">Top Customer dengan Qty NG Terbanyak</h2>
             </CardHeader>
             <CardContent>
-              <div className="h-64 w-full">
+              <div className="h-80 w-full">
                 {customerChartData.length ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={customerChartData} layout="vertical" margin={{ top: 8, right: 16, left: 24, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
+                    <BarChart data={customerChartData} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                       <XAxis type="number" allowDecimals={false} />
-                      <YAxis dataKey="customer" type="category" width={100} tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar dataKey="count" name="Qty NG (Pcs)" fill="#be123c" radius={[0, 4, 4, 0]} />
+                      <YAxis
+                        dataKey="customer"
+                        type="category"
+                        width={140}
+                        interval={0}
+                        tick={{ fontSize: 10, fill: "currentColor" }}
+                        tickFormatter={(val: string) => (val.length > 18 ? `${val.slice(0, 16)}…` : val)}
+                      />
+                      <Tooltip formatter={(value: number) => [`${value.toLocaleString("id-ID")} Pcs`, "Qty NG"]} />
+                      <Bar dataKey="count" name="Qty NG (Pcs)" fill="#be123c" radius={[0, 4, 4, 0]} barSize={18} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -543,7 +550,7 @@ export default function StokNcrPage() {
       </div>
 
       {/* PRINT VIEW PDF DOKUMEN STOK NCR */}
-      <div className="hidden print:block print:space-y-6 bg-white text-black p-4">
+      <div className="print-only print:space-y-6 bg-white text-black p-4">
         <div className="border-b pb-4 text-center">
           <h1 className="text-2xl font-bold uppercase tracking-wide text-rose-800">Laporan Stok NCR & Grade C</h1>
           <p className="text-xs text-gray-600 mt-1">

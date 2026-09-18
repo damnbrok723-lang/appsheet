@@ -70,6 +70,12 @@ body {
   background: #999;
 }
 
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
 @media print {
   aside, header, nav, .no-print {
     display: none !important;
@@ -78,6 +84,7 @@ body {
     background: #ffffff !important;
     color: #000000 !important;
   }
+  .print-only,
   .print\:block {
     display: block !important;
   }

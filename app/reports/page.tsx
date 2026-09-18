@@ -977,7 +977,7 @@ export default function ReportsPage() {
       </div>
 
       {/* DOKUMEN CETAK / EXPORT PDF KHUSUS PRINT */}
-      <div className="hidden print:block print:space-y-6 bg-white text-black p-4">
+      <div className="print-only print:space-y-6 bg-white text-black p-4">
         <div className="border-b pb-4 text-center">
           <h1 className="text-2xl font-bold uppercase tracking-wide">Laporan Hasil Produksi & Daily Repair</h1>
           <p className="text-xs text-gray-600 mt-1">
