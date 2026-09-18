@@ -460,16 +460,24 @@ export default function StokNcrPage() {
                     accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                     className="hidden"
                   />
+                  <a
+                    href="/template-stok-ncr-grade-c.xlsx"
+                    download
+                    className="inline-flex h-8 items-center rounded-md border bg-background px-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <FileSpreadsheet className="mr-1 h-3.5 w-3.5 text-emerald-600" />
+                    Template SAP
+                  </a>
                   <Button
                     type="button"
                     variant="default"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImporting}
-                    className="h-8 text-xs bg-rose-600 hover:bg-rose-700 text-white"
+                    className="h-8 text-xs"
                   >
                     <Upload className="mr-1 h-3.5 w-3.5" />
-                    {isImporting ? "Mengimpor..." : "Import CSV / Excel"}
+                    {isImporting ? "Mengimpor..." : "Import Excel"}
                   </Button>
                   <Button type="button" variant="outline" size="sm" onClick={exportNcrExcel} disabled={!filteredReports.length} className="h-8 text-xs">
                     <Download className="mr-1 h-3.5 w-3.5" />

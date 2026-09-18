@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
 import ExcelJS from "exceljs";
@@ -226,6 +227,14 @@ export default function OutputRepairPage() {
             accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="hidden"
           />
+          <a
+            href="/template-output-repair.xlsx"
+            download
+            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+            Template SAP
+          </a>
           <Button
             type="button"
             variant="default"
@@ -234,7 +243,7 @@ export default function OutputRepairPage() {
             disabled={isImporting}
           >
             <Upload className="mr-1.5 h-4 w-4" />
-            {isImporting ? "Mengimpor..." : "Import Excel / CSV"}
+            {isImporting ? "Mengimpor..." : "Import Excel"}
           </Button>
 
           <Button type="button" variant="outline" size="sm" onClick={exportExcel} disabled={!filteredReports.length}>

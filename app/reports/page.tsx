@@ -838,17 +838,14 @@ export default function ReportsPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {isReviewer && (
-                <>
-                  <a href="/Control Daily Repair by SAP.xlsx" download className="inline-flex h-8 items-center rounded-md border px-2.5 text-xs font-medium hover:bg-accent">
-                    Template
-                  </a>
-                  <input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} />
-                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>
-                    {importMutation.isPending ? "Mengimpor..." : "Import Excel"}
-                  </Button>
-                </>
-              )}
+              <a href="/template-output-repair.xlsx" download className="inline-flex h-8 items-center rounded-md border px-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground">
+                <FileBarChart className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                Template SAP
+              </a>
+              <input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} />
+              <Button type="button" variant="default" size="sm" className="h-8 text-xs" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>
+                {importMutation.isPending ? "Mengimpor..." : "Import Excel"}
+              </Button>
               <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={exportCsv} disabled={!filteredReports.length}>
                 <Download className="mr-1 h-3.5 w-3.5" />
                 Export

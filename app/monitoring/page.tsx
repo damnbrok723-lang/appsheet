@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMemo } from "react";
-import { Activity } from "lucide-react";
+import { Activity, Download, FileSpreadsheet, Printer, Upload } from "lucide-react";
+import ExcelJS from "exceljs";
 
 type MonitoringEntry = { id: string; date: string; shift: string; operatorCount: number; warehouse: string; teamLeader: string | null };
 type MonitoringData = { entries: MonitoringEntry[]; summary: { totalOperators: number; qtyOk: number; qtyNg: number; okPercentage: number; totalMonthlyManpower: number; warehouseManpower: Record<string, number> } };
@@ -65,16 +66,69 @@ export default function MonitoringPage() {
   async function importCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const rows = (await file.text()).split(/\r?\n/).filter(Boolean).slice(1).map((line) => line.split(",").map((value) => value.trim().replace(/^"|"$/g, "")));
-    let success = 0;
-    for (const [rowDate, rowShift, rowOperators, rowWarehouse, rowLeader] of rows) {
-      if (!rowDate || !rowShift || !rowOperators || !warehouses.includes(rowWarehouse) || !rowLeader) continue;
-      const response = await fetch("/api/monitoring", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: rowDate, shift: rowShift.toUpperCase(), operatorCount: Number(rowOperators), warehouse: rowWarehouse, teamLeader: rowLeader }) });
-      if (response.ok) success += 1;
+
+    toast.loading("Mengimpor file Excel / CSV Monitoring...", { id: "import-mon" });
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/monitoring", { method: "POST", body });
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.message || "Gagal mengimpor file");
+
+      toast.success(`${result.data?.imported ?? 0} data monitoring berhasil diimpor!`, { id: "import-mon" });
+      queryClient.invalidateQueries({ queryKey: ["monitoring"] });
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-mon" });
+    } finally {
+      if (importRef.current) importRef.current.value = "";
     }
-    toast.success(`${success} baris monitoring berhasil diimpor`);
-    queryClient.invalidateQueries({ queryKey: ["monitoring"] });
-    if (importRef.current) importRef.current.value = "";
+  }
+
+  async function exportMonitoringExcel() {
+    toast.loading("Mengeksport data Monitoring...", { id: "export-mon" });
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("MP repair");
+
+      worksheet.columns = [
+        { header: "No", key: "no", width: 8 },
+        { header: "Tanggal", key: "tanggal", width: 16 },
+        { header: "Jumlah Operator", key: "jumlahOperator", width: 18 },
+        { header: "Shift", key: "shift", width: 14 },
+        { header: "Gudang", key: "gudang", width: 14 },
+        { header: "Kepala Regu", key: "teamLeader", width: 22 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2563EB" } };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.height = 24;
+
+      entries.forEach((entry, idx) => {
+        worksheet.addRow({
+          no: idx + 1,
+          tanggal: entry.date.slice(0, 10),
+          jumlahOperator: entry.operatorCount,
+          shift: SHIFT_LABEL[entry.shift] ?? entry.shift,
+          gudang: `Gd ${entry.warehouse}`,
+          teamLeader: entry.teamLeader ?? "-",
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `monitoring-mp-repair-${filterFrom || "all"}-sd-${filterTo || "all"}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast.success("Excel Monitoring berhasil di-download!", { id: "export-mon" });
+    } catch {
+      toast.error("Gagal export Monitoring", { id: "export-mon" });
+    }
   }
 
   const entries = (query.data?.entries ?? []).filter((entry) => {
@@ -223,6 +277,40 @@ export default function MonitoringPage() {
         </div>
       )}
     </Card>
-    <Card className="p-5"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">Input Monitoring</h2><p className="text-xs text-muted-foreground">Format CSV: Tanggal, Shift, Jumlah Operator, Gudang, Kepala Regu</p></div><div className="flex gap-2"><a href="/monitoring-template.csv" download className="rounded-md border px-3 py-2 text-sm">Download Template</a><label className="cursor-pointer rounded-md border px-3 py-2 text-sm">Import CSV<input ref={importRef} type="file" accept=".csv,text/csv" className="sr-only" onChange={importCsv} /></label></div></div><form onSubmit={submit} className="grid gap-4 md:grid-cols-5"><label className="space-y-2 text-sm">Tanggal<Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label><label className="space-y-2 text-sm">Shift<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={shift} onChange={(event) => setShift(event.target.value)}>{shiftOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-2 text-sm">Jumlah Operator<Input type="number" min="0" value={operatorCount} onChange={(event) => setOperatorCount(event.target.value)} required /></label><label className="space-y-2 text-sm">Gudang<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={warehouse} onChange={(event) => setWarehouse(event.target.value)}>{warehouses.map((value) => <option key={value} value={value}>{value}</option>)}</select></label><label className="space-y-2 text-sm">Kepala Regu<Input value={teamLeader} onChange={(event) => setTeamLeader(event.target.value)} required /></label><Button type="submit" disabled={saveMutation.isPending} className="md:col-span-5">{saveMutation.isPending ? "Menyimpan..." : "Simpan monitoring"}</Button></form></Card>
+    <Card className="p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Input &amp; Kelola Data Monitoring</h2>
+          <p className="text-xs text-muted-foreground">Format Excel/CSV: Tanggal, Shift, Jumlah Operator, Gudang, Kepala Regu</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/template-monitoring-mp-repair.xlsx"
+            download
+            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+            Download Template Excel
+          </a>
+          <label className="inline-flex h-8 cursor-pointer items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            Import Excel / CSV
+            <input ref={importRef} type="file" accept=".csv, .xlsx, .xls" className="sr-only" onChange={importCsv} />
+          </label>
+          <Button type="button" variant="outline" size="sm" onClick={exportMonitoringExcel} className="h-8 text-xs">
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Export Excel
+          </Button>
+        </div>
+      </div>
+      <form onSubmit={submit} className="grid gap-4 md:grid-cols-5">
+        <label className="space-y-2 text-sm font-medium">Tanggal<Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label>
+        <label className="space-y-2 text-sm font-medium">Shift<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={shift} onChange={(event) => setShift(event.target.value)}>{shiftOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="space-y-2 text-sm font-medium">Jumlah Operator<Input type="number" min="0" value={operatorCount} onChange={(event) => setOperatorCount(event.target.value)} required /></label>
+        <label className="space-y-2 text-sm font-medium">Gudang<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={warehouse} onChange={(event) => setWarehouse(event.target.value)}>{warehouses.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="space-y-2 text-sm font-medium">Kepala Regu<Input value={teamLeader} onChange={(event) => setTeamLeader(event.target.value)} required /></label>
+        <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-5">{saveMutation.isPending ? "Menyimpan..." : "Simpan Data Monitoring"}</Button>
+      </form>
+    </Card>
   </div>;
 }
