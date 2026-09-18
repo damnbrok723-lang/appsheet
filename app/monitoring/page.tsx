@@ -196,7 +196,7 @@ export default function MonitoringPage() {
                       {whGroup.entries.map((entry) => (
                         <tr key={entry.id} className="border-t hover:bg-muted/30 transition-colors">
                           <td className="px-6 py-2">
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset" style={{ backgroundColor: `${WAREHOUSE_COLORS[wh] ?? "#94a3b8"}18`, color: WAREHOUSE_COLORS[wh] ?? "#64748b", ringColor: WAREHOUSE_COLORS[wh] ?? "#94a3b8" }}>
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: `${WAREHOUSE_COLORS[wh] ?? "#94a3b8"}28`, color: WAREHOUSE_COLORS[wh] ?? "#64748b", outline: `1px solid ${WAREHOUSE_COLORS[wh] ?? "#94a3b8"}60` }}>
                               {SHIFT_LABEL[entry.shift] ?? entry.shift}
                             </span>
                           </td>
