@@ -454,7 +454,7 @@ export default function StokNcrPage() {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="rounded bg-rose-100 px-2 py-0.5 font-mono text-xs font-bold text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">
+                        <span className="inline-flex items-center rounded-md bg-rose-600 px-2.5 py-0.5 font-mono text-xs font-extrabold text-white shadow-xs">
                           {report.ncrNumber || `NCR-${report.batchNumber}`}
                         </span>
                         <Link href={`/reports/${report.id}`} className="font-semibold text-foreground hover:underline">
