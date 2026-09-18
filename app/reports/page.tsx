@@ -421,7 +421,7 @@ export default function ReportsPage() {
   }, [filteredReports, currentPage, pageSize]);
 
   return (
-    <div className="space-y-6 pb-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Laporan Produksi</h1>
         <p className="text-muted-foreground">Input laporan produksi harian dan dokumentasi proses.</p>
