@@ -109,9 +109,9 @@ export async function POST(request: Request) {
 
     const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
     const requestedSheet = textValue(formData.get("sheetHint")).toLowerCase();
-    let stockSheet = workbook.Sheets[findSheet(workbook, ["stok grade c", "stok grade", "stok ncr"]) ?? ""];
-    let repairSheet = workbook.Sheets[findSheet(workbook, ["repair", "output repair"]) ?? ""];
-    let manpowerSheet = workbook.Sheets[findSheet(workbook, ["mp repair", "mprepair", "monitoring"]) ?? ""];
+    let stockSheet: XLSX.WorkSheet | undefined = workbook.Sheets[findSheet(workbook, ["stok grade c", "stok grade", "stok ncr"]) ?? ""];
+    let repairSheet: XLSX.WorkSheet | undefined = workbook.Sheets[findSheet(workbook, ["repair", "output repair"]) ?? ""];
+    let manpowerSheet: XLSX.WorkSheet | undefined = workbook.Sheets[findSheet(workbook, ["mp repair", "mprepair", "monitoring"]) ?? ""];
     if (requestedSheet) {
       stockSheet = requestedSheet.includes("stok") ? stockSheet : undefined;
       repairSheet = requestedSheet.includes("repair") && !requestedSheet.includes("mp") ? repairSheet : undefined;
