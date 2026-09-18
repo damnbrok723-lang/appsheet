@@ -689,13 +689,13 @@ export default function ReportsPage() {
           ) : (
             <>
               <div className="mb-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-sm text-emerald-700 font-medium">Total Qty OK</p>
-                  <p className="text-2xl font-bold text-emerald-900">{totalOk.toLocaleString("id-ID")}</p>
+                <div className="rounded-md border border-emerald-300 bg-emerald-100/60 p-4 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40">
+                  <p className="text-sm font-semibold text-emerald-950 dark:text-emerald-200">Total Qty OK</p>
+                  <p className="text-2xl font-extrabold text-emerald-950 dark:text-emerald-100">{totalOk.toLocaleString("id-ID")}</p>
                 </div>
-                <div className="rounded-md border border-rose-200 bg-rose-50 p-4">
-                  <p className="text-sm text-rose-700 font-medium">Total Qty NG</p>
-                  <p className="text-2xl font-bold text-rose-900">{totalNg.toLocaleString("id-ID")}</p>
+                <div className="rounded-md border border-rose-300 bg-rose-100/60 p-4 shadow-sm dark:border-rose-800 dark:bg-rose-950/40">
+                  <p className="text-sm font-semibold text-rose-950 dark:text-rose-200">Total Qty NG</p>
+                  <p className="text-2xl font-extrabold text-rose-950 dark:text-rose-100">{totalNg.toLocaleString("id-ID")}</p>
                 </div>
               </div>
               <div className="h-72 w-full">
