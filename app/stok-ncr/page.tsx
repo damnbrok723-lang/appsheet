@@ -25,6 +25,7 @@ import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
 import { useCardPermission } from "@/lib/card-permissions";
+import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 
 type Report = {
   id: string;
@@ -97,6 +98,7 @@ export default function StokNcrPage() {
       }
 
       toast.success(`Berhasil mengimpor ${data.data?.stockImported ?? 0} data Stok NCR!`, { id: "import-ncr" });
+      notifySapDataUpdated();
       queryClient.invalidateQueries({ queryKey: ["production-reports"] });
     } catch (err: any) {
       toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-ncr" });
@@ -119,6 +121,14 @@ export default function StokNcrPage() {
   const showDocsCard = useCardPermission("ncr_documents", userRole, userPermissions);
   const showCustomersCard = useCardPermission("ncr_customers", userRole, userPermissions);
   const showDefectCasesCard = useCardPermission("ncr_defect_cases", userRole, userPermissions);
+
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key === SAP_DATA_UPDATED_EVENT) queryClient.invalidateQueries({ queryKey: ["production-reports"] });
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [queryClient]);
 
   const reportsQuery = useQuery({
     queryKey: ["production-reports"],

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useMemo } from "react";
 import { Activity, Download, FileSpreadsheet, Printer, Upload } from "lucide-react";
 import ExcelJS from "exceljs";
+import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 
 type MonitoringEntry = { id: string; date: string; shift: string; operatorCount: number; warehouse: string; teamLeader: string | null };
 type MonitoringData = { entries: MonitoringEntry[]; summary: { totalOperators: number; qtyOk: number; qtyNg: number; okPercentage: number; totalMonthlyManpower: number; warehouseManpower: Record<string, number> } };
@@ -38,6 +39,13 @@ function getCachedMonitoring() {
 export default function MonitoringPage() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["monitoring"], queryFn: fetchMonitoring, initialData: getCachedMonitoring, staleTime: 30_000, refetchOnWindowFocus: false });
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key === SAP_DATA_UPDATED_EVENT) queryClient.invalidateQueries({ queryKey: ["monitoring"] });
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [queryClient]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [shift, setShift] = useState("SHIFT_1");
   const [operatorCount, setOperatorCount] = useState("");
@@ -76,6 +84,7 @@ export default function MonitoringPage() {
       if (!res.ok || !result.success) throw new Error(result.message || "Gagal mengimpor file");
 
       toast.success(`${result.data?.manpowerImported ?? 0} data monitoring berhasil diimpor!`, { id: "import-mon" });
+      notifySapDataUpdated();
       queryClient.invalidateQueries({ queryKey: ["monitoring"] });
     } catch (err: any) {
       toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-mon" });

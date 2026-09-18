@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import ExcelJS from "exceljs";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 
 type Report = {
   id: string;
@@ -68,6 +69,14 @@ export default function OutputRepairPage() {
   const [shiftFilter, setShiftFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key === SAP_DATA_UPDATED_EVENT) queryClient.invalidateQueries({ queryKey: ["output-repair-reports"] });
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [queryClient]);
 
   const reportsQuery = useQuery({
     queryKey: ["output-repair-reports"],
@@ -172,6 +181,7 @@ export default function OutputRepairPage() {
       }
 
       toast.success(`Berhasil mengimpor ${data.data?.repairImported ?? 0} data Output Repair!`, { id: "import-repair" });
+      notifySapDataUpdated();
       queryClient.invalidateQueries({ queryKey: ["output-repair-reports"] });
     } catch (err: any) {
       toast.error(err.message || "Gagal mengimpor file", { id: "import-repair" });

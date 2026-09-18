@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
 import { BarChart3, Download, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCardPermission } from "@/lib/card-permissions";
+import { notifySapDataUpdated, SAP_DATA_UPDATED_EVENT } from "@/lib/sap-sync";
 
 const WAREHOUSE_COLORS = ["#2563eb", "#0d9488", "#6366f1", "#f59e0b", "#e11d48"];
 
@@ -49,6 +50,16 @@ export default function GrafikSapPage() {
   const showImport = useCardPermission("grafik_sap_import", userRole, userPermissions);
   const showExport = useCardPermission("grafik_sap_export", userRole, userPermissions);
   const showDelete = useCardPermission("grafik_sap_delete", userRole, userPermissions);
+
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== SAP_DATA_UPDATED_EVENT) return;
+      queryClient.invalidateQueries({ queryKey: ["grafik-sap-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["grafik-sap-monitoring"] });
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [queryClient]);
 
   const reportsQuery = useQuery({
     queryKey: ["grafik-sap-reports"],
@@ -142,6 +153,7 @@ export default function GrafikSapPage() {
         queryClient.invalidateQueries({ queryKey: ["production-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["monitoring"] }),
       ]);
+      notifySapDataUpdated();
       toast.success(`Import selesai: ${result.data.stockImported} stok, ${result.data.repairImported} repair, ${result.data.manpowerImported} manpower`, { id: "import-control" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gagal mengimpor workbook SAP", { id: "import-control" });
@@ -216,6 +228,7 @@ export default function GrafikSapPage() {
         queryClient.invalidateQueries({ queryKey: ["grafik-sap-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["grafik-sap-monitoring"] }),
       ]);
+      notifySapDataUpdated();
       toast.success(`Data SAP dihapus: ${result.data.reportsDeleted} report, ${result.data.monitoringDeleted} manpower`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gagal menghapus data SAP");
