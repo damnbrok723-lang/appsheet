@@ -638,13 +638,17 @@ export default function ReportsPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              <a href="/laporan-produksi-template.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent">
-                Download Template
-              </a>
-              <input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} />
-              <Button type="button" variant="outline" size="sm" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>
-                {importMutation.isPending ? "Mengimpor..." : "Import Excel"}
-              </Button>
+              {isReviewer && (
+                <>
+                  <a href="/laporan-produksi-template.xlsx" download className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent">
+                    Download Template
+                  </a>
+                  <input ref={importInputRef} className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} />
+                  <Button type="button" variant="outline" size="sm" onClick={() => importInputRef.current?.click()} disabled={importMutation.isPending}>
+                    {importMutation.isPending ? "Mengimpor..." : "Import Excel"}
+                  </Button>
+                </>
+              )}
               <Button type="button" variant="outline" size="sm" onClick={exportCsv} disabled={!filteredReports.length}>
                 <Download className="mr-2 h-4 w-4" />
                 Export Excel
@@ -653,7 +657,7 @@ export default function ReportsPage() {
                 <Printer className="mr-2 h-4 w-4" />
                 Export PDF
               </Button>
-              {allReports.length > 0 && (
+              {currentUser?.role === "ADMIN" && allReports.length > 0 && (
                 <Button
                   type="button"
                   variant="destructive"
