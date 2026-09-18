@@ -290,7 +290,15 @@ export default function MonitoringPage() {
             className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
           >
             <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-            Download Template Excel
+            Template Kosong
+          </a>
+          <a
+            href="/Control Daily Repair by SAP.xlsx"
+            download
+            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
+            File SAP Asli
           </a>
           <label className="inline-flex h-8 cursor-pointer items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
             <Upload className="mr-1.5 h-3.5 w-3.5" />

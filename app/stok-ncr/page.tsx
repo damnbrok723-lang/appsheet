@@ -80,6 +80,7 @@ export default function StokNcrPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("sheetHint", "stok grade c"); // Ambil sheet "Stok Grade C" dari SAP file
 
       const res = await fetch("/api/production-reports", {
         method: "POST",
@@ -466,7 +467,15 @@ export default function StokNcrPage() {
                     className="inline-flex h-8 items-center rounded-md border bg-background px-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
                   >
                     <FileSpreadsheet className="mr-1 h-3.5 w-3.5 text-emerald-600" />
-                    Template SAP
+                    Template Kosong
+                  </a>
+                  <a
+                    href="/Control Daily Repair by SAP.xlsx"
+                    download
+                    className="inline-flex h-8 items-center rounded-md border bg-background px-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <FileSpreadsheet className="mr-1 h-3.5 w-3.5 text-blue-600" />
+                    File SAP Asli
                   </a>
                   <Button
                     type="button"

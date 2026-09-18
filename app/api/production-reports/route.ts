@@ -108,8 +108,13 @@ async function importReports(request: Request, userId: string) {
   if (file.size > 10 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 10 MB" }, { status: 400 });
 
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-  // Cari sheet yang tepat: utamakan sheet Stok Grade C, Repair, atau Output Repair
+
+  // Ambil sheetHint dari form jika ada (misal "repair" untuk Output Repair, "stok grade c" untuk Stok NCR)
+  const sheetHint = (formData.get("sheetHint") as string | null)?.trim().toLowerCase() ?? "";
+
+  // Cari sheet yang tepat: jika ada sheetHint → prioritaskan, lalu fallback ke auto-detect
   const sheetName =
+    (sheetHint ? workbook.SheetNames.find((name) => name.trim().toLowerCase().includes(sheetHint)) : undefined) ??
     workbook.SheetNames.find((name) => ["stok grade c", "stok grade", "stok ncr", "grade c", "stok"].includes(name.trim().toLowerCase())) ??
     workbook.SheetNames.find((name) => ["output repair", "laporan produksi", "laporan", "production report", "production", "data repair"].includes(name.trim().toLowerCase())) ??
     workbook.SheetNames.find((name) => name.trim().toLowerCase() === "repair") ??
