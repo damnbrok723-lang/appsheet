@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
-import { BarChart3, Download, FileSpreadsheet, RefreshCw, Upload } from "lucide-react";
+import { BarChart3, Download, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useCardPermission } from "@/lib/card-permissions";
 
 const WAREHOUSE_COLORS = ["#2563eb", "#0d9488", "#6366f1", "#f59e0b", "#e11d48"];
 
@@ -32,6 +33,22 @@ export default function GrafikSapPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const sessionQuery = useQuery({
+    queryKey: ["auth-session"],
+    queryFn: async () => (await fetch("/api/auth/session")).json(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const userRole = (sessionQuery.data?.user?.role as string) || "EMPLOYEE";
+  const userPermissions = sessionQuery.data?.user?.permissions as string[] | undefined;
+  const showManpower = useCardPermission("grafik_sap_manpower", userRole, userPermissions);
+  const showStock = useCardPermission("grafik_sap_stock", userRole, userPermissions);
+  const showDaily = useCardPermission("grafik_sap_daily", userRole, userPermissions);
+  const showWarehouse = useCardPermission("grafik_sap_warehouse", userRole, userPermissions);
+  const showImport = useCardPermission("grafik_sap_import", userRole, userPermissions);
+  const showExport = useCardPermission("grafik_sap_export", userRole, userPermissions);
+  const showDelete = useCardPermission("grafik_sap_delete", userRole, userPermissions);
 
   const reportsQuery = useQuery({
     queryKey: ["grafik-sap-reports"],
@@ -188,6 +205,25 @@ export default function GrafikSapPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function deleteImportedData() {
+    if (!window.confirm("Hapus semua data import SAP milik user ini? Data Laporan dan foto tidak akan dihapus.")) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/control-daily-repair", { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || "Gagal menghapus data SAP");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["grafik-sap-reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["grafik-sap-monitoring"] }),
+      ]);
+      toast.success(`Data SAP dihapus: ${result.data.reportsDeleted} report, ${result.data.monitoringDeleted} manpower`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus data SAP");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   const chartEmpty = (message: string) => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{message}</div>;
 
   return (
@@ -202,26 +238,29 @@ export default function GrafikSapPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={importWorkbook} />
-          <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+          {showImport && <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
             <Upload className="mr-1.5 h-4 w-4" /> {isImporting ? "Mengimpor..." : "Import SAP"}
-          </Button>
-          <Button type="button" variant="outline" onClick={exportWorkbook}>
+          </Button>}
+          {showExport && <Button type="button" variant="outline" onClick={exportWorkbook}>
             <Download className="mr-1.5 h-4 w-4" /> Export SAP
-          </Button>
+          </Button>}
           <Button type="button" variant="outline" onClick={() => { reportsQuery.refetch(); monitoringQuery.refetch(); }}>
-            <RefreshCw className="mr-1.5 h-4 w-4" /> Refresh
+            <RefreshCw className="mr-1.5 h-4 w-4" /> Reset / Refresh
           </Button>
-          <a href="/Control Daily Repair by SAP.xlsx" download className="inline-flex h-10 items-center rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent">
+          {showImport && <a href="/Control Daily Repair by SAP.xlsx" download className="inline-flex h-10 items-center rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent">
             <FileSpreadsheet className="mr-1.5 h-4 w-4 text-emerald-600" /> Template SAP
-          </a>
+          </a>}
+          {showDelete && <Button type="button" variant="outline" onClick={deleteImportedData} disabled={isDeleting} className="border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700">
+            <Trash2 className="mr-1.5 h-4 w-4" /> {isDeleting ? "Menghapus..." : "Hapus Data SAP"}
+          </Button>}
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card><CardHeader><h2 className="text-base font-semibold">Man Power per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet MP repair</p></CardHeader><CardContent><div className="h-80">{manpowerData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={manpowerData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Orang`, "Manpower"]} /><Bar dataKey="operators" name="Manpower" fill={WAREHOUSE_COLORS[0]} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data manpower")}</div></CardContent></Card>
-        <Card><CardHeader><h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet Stok Grade C</p></CardHeader><CardContent><div className="h-80">{stockChartData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={stockChartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis /><Tooltip formatter={(value) => [formatKg(Number(value)), "Tonase"]} /><Bar dataKey="gradeC" name="Stok Grade C" fill="#e11d48" radius={[4, 4, 0, 0]} /><Bar dataKey="st" name="Stok ST" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data tonase stok")}</div></CardContent></Card>
-        <Card><CardHeader><h2 className="text-base font-semibold">Daily Output Repair</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair</p></CardHeader><CardContent><div className="h-80">{dailyRepairData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={dailyRepairData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} /><Bar dataKey="output" name="Output Repair" fill="#0d9488" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data output repair")}</div></CardContent></Card>
-        <Card><CardHeader><h2 className="text-base font-semibold">Output Repair per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair</p></CardHeader><CardContent><div className="h-80">{repairWarehouseData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={repairWarehouseData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} /><Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data output per gudang")}</div></CardContent></Card>
+        {showManpower && <Card><CardHeader><h2 className="text-base font-semibold">Man Power per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet MP repair</p></CardHeader><CardContent><div className="h-80">{manpowerData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={manpowerData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Orang`, "Manpower"]} /><Bar dataKey="operators" name="Manpower" fill={WAREHOUSE_COLORS[0]} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data manpower")}</div></CardContent></Card>}
+        {showStock && <Card><CardHeader><h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet Stok Grade C</p></CardHeader><CardContent><div className="h-80">{stockChartData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={stockChartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis /><Tooltip formatter={(value) => [formatKg(Number(value)), "Tonase"]} /><Bar dataKey="gradeC" name="Stok Grade C" fill="#e11d48" radius={[4, 4, 0, 0]} /><Bar dataKey="st" name="Stok ST" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data tonase stok")}</div></CardContent></Card>}
+        {showDaily && <Card><CardHeader><h2 className="text-base font-semibold">Daily Output Repair</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair</p></CardHeader><CardContent><div className="h-80">{dailyRepairData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={dailyRepairData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} /><Bar dataKey="output" name="Output Repair" fill="#0d9488" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data output repair")}</div></CardContent></Card>}
+        {showWarehouse && <Card><CardHeader><h2 className="text-base font-semibold">Output Repair per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair</p></CardHeader><CardContent><div className="h-80">{repairWarehouseData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={repairWarehouseData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} /><Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data output per gudang")}</div></CardContent></Card>}
       </div>
     </div>
   );

@@ -12,7 +12,15 @@ export type CardId =
   | "reports_input_form"
   | "reports_export"
   | "reports_reviewer_actions"
+  | "grafik_sap_manpower"
+  | "grafik_sap_stock"
+  | "grafik_sap_daily"
+  | "grafik_sap_warehouse"
+  | "grafik_sap_import"
+  | "grafik_sap_export"
+  | "grafik_sap_delete"
   | "nav_dashboard"
+  | "nav_grafik_sap"
   | "nav_stok_ncr"
   | "nav_repair"
   | "nav_laporan"
@@ -30,7 +38,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "reports_input_form",
     "reports_export",
     "reports_reviewer_actions",
+    "grafik_sap_manpower",
+    "grafik_sap_stock",
+    "grafik_sap_daily",
+    "grafik_sap_warehouse",
+    "grafik_sap_import",
+    "grafik_sap_export",
+    "grafik_sap_delete",
     "nav_dashboard",
+    "nav_grafik_sap",
     "nav_stok_ncr",
     "nav_repair",
     "nav_laporan",
@@ -45,7 +61,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "reports_qty_ng",
     "reports_export",
     "reports_reviewer_actions",
+    "grafik_sap_manpower",
+    "grafik_sap_stock",
+    "grafik_sap_daily",
+    "grafik_sap_warehouse",
+    "grafik_sap_import",
+    "grafik_sap_export",
     "nav_dashboard",
+    "nav_grafik_sap",
     "nav_stok_ncr",
     "nav_repair",
     "nav_laporan",
@@ -56,7 +79,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "reports_qty_ok",
     "reports_qty_ng",
     "reports_input_form",
+    "grafik_sap_manpower",
+    "grafik_sap_stock",
+    "grafik_sap_daily",
+    "grafik_sap_warehouse",
+    "grafik_sap_import",
     "nav_dashboard",
+    "nav_grafik_sap",
     "nav_stok_ncr",
     "nav_repair",
     "nav_laporan",

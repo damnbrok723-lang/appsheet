@@ -10,7 +10,7 @@ import { hasPermission, CardId } from "@/lib/card-permissions";
 
 const mobileItems: { name: string; href: string; icon: any; permission?: CardId }[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "nav_dashboard" },
-  { name: "Grafik SAP", href: "/grafik-sap", icon: BarChart3, permission: "nav_dashboard" },
+  { name: "Grafik SAP", href: "/grafik-sap", icon: BarChart3, permission: "nav_grafik_sap" },
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },
   { name: "Output Repair", href: "/output-repair", icon: Wrench, permission: "nav_repair" },
   { name: "Laporan", href: "/reports", icon: FileBarChart, permission: "nav_laporan" },
