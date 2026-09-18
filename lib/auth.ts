@@ -22,8 +22,13 @@ export const authConfig: AuthConfig = {
         const validated = loginSchema.safeParse(credentials);
         if (!validated.success) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { username: validated.data.username },
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { username: { equals: validated.data.username, mode: "insensitive" } },
+              { email: { equals: validated.data.username, mode: "insensitive" } },
+            ],
+          },
           include: { roleRef: true },
         });
 
