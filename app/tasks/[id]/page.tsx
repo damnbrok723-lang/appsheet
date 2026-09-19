@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare, CheckCircle, Paperclip } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type TaskComment = { id: string; comment: string; createdAt: string; user?: { name?: string } };
 type TaskAttachment = { id: string; fileName: string; fileSize: number; mimeType: string; createdAt: string; user?: { name?: string } };
@@ -51,7 +52,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
     onError: (error) => toast.error(error.message),
   });
   const attachmentMutation = useMutation({
-    mutationFn: async () => { if (!attachment) throw new Error("Pilih file terlebih dahulu"); if (attachment.size > 5 * 1024 * 1024) throw new Error("Ukuran file terlalu besar. Maksimal 5 MB."); const allowedExtensions = ["png", "jpg", "jpeg", "webp", "pdf", "doc", "docx", "xls", "xlsx", "txt"]; const extension = attachment.name.split(".").pop()?.toLowerCase(); if (!["image/jpeg", "image/png", "image/webp", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/plain"].includes(attachment.type) && !allowedExtensions.includes(extension ?? "")) { throw new Error("Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT."); } const body = new FormData(); body.set("file", attachment); const response = await fetch(`/api/tasks/${params.id}/attachments`, { method: "POST", body }); const result = await response.json(); if (!response.ok) throw new Error(result.message || "Upload gagal"); },
+    mutationFn: async () => { if (!attachment) throw new Error("Pilih file terlebih dahulu"); if (!supabaseBrowser) throw new Error("Supabase Storage belum terkonfigurasi di browser"); if (attachment.size > 5 * 1024 * 1024) throw new Error("Ukuran file terlalu besar. Maksimal 5 MB."); const uploadUrlResponse = await fetch("/api/control-daily-repair/upload-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: attachment.name, folder: "tasks", taskId: params.id }) }); const uploadUrlResult = await uploadUrlResponse.json(); if (!uploadUrlResponse.ok || !uploadUrlResult.success) throw new Error(uploadUrlResult.message || "Gagal menyiapkan upload"); const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string }; const { error: uploadError } = await supabaseBrowser.storage.from(uploadInfo.bucket).uploadToSignedUrl(uploadInfo.path, uploadInfo.token, attachment); if (uploadError) throw new Error(uploadError.message); const response = await fetch(`/api/tasks/${params.id}/attachments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: uploadInfo.path, fileName: attachment.name, mimeType: attachment.type, fileSize: attachment.size }) }); const result = await response.json(); if (!response.ok) throw new Error(result.message || "Upload gagal"); },
     onSuccess: () => { setAttachment(null); toast.success("Lampiran task tersimpan"); queryClient.invalidateQueries({ queryKey: ["task", params.id] }); },
     onError: (error) => toast.error(error.message),
   });

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/permissions";
 import type { ProductionReport } from "@prisma/client";
 import { z } from "zod";
 import * as XLSX from "xlsx";
+import { downloadStorageFile } from "@/lib/storage";
 
 const reportSchema = z.object({
   reportDate: z.coerce.date(),
@@ -120,16 +121,29 @@ function normalizeHeader(value: string) {
   return value.toLowerCase().replace(/[\s_-]+/g, "").replace(/[^a-z0-9]/g, "");
 }
 
-async function importReports(request: Request, userId: string) {
-  const formData = await request.formData();
-  const file = formData.get("file");
-  if (!(file instanceof File)) return Response.json({ success: false, message: "File Excel wajib dipilih" }, { status: 400 });
-  if (file.size > 10 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 10 MB" }, { status: 400 });
+async function importReports(request: Request, userId: string, storedImport?: { path: string; sheetHint?: string }) {
+  let workbookBuffer: ArrayBuffer;
+  let fileName = "import.xlsx";
+  let sheetHint = "";
+  if (storedImport) {
+    if (!storedImport.path.startsWith(`${userId}/imports/`)) return Response.json({ success: false, message: "Import file path tidak valid" }, { status: 400 });
+    const storedFile = await downloadStorageFile(storedImport.path);
+    workbookBuffer = await storedFile.arrayBuffer();
+    fileName = storedImport.path.split("/").pop() || fileName;
+    sheetHint = storedImport.sheetHint?.trim().toLowerCase() || "";
+  } else {
+    const formData = await request.formData();
+    const file = formData.get("file");
+    if (!(file instanceof File)) return Response.json({ success: false, message: "File Excel wajib dipilih" }, { status: 400 });
+    if (file.size > 10 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 10 MB" }, { status: 400 });
+    workbookBuffer = await file.arrayBuffer();
+    fileName = file.name;
+    sheetHint = (formData.get("sheetHint") as string | null)?.trim().toLowerCase() ?? "";
+  }
 
-  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+  const workbook = XLSX.read(workbookBuffer, { type: "array", cellDates: true });
 
   // Ambil sheetHint dari form jika ada (misal "repair" untuk Output Repair, "stok grade c" untuk Stok NCR)
-  const sheetHint = (formData.get("sheetHint") as string | null)?.trim().toLowerCase() ?? "";
   const isStockImport = sheetHint.includes("stok");
   const isRepairImport = sheetHint.includes("repair");
 
@@ -241,7 +255,7 @@ async function importReports(request: Request, userId: string) {
       userId,
       action: "EXCEL_IMPORTED",
       entityType: "ProductionReport",
-      metadata: JSON.stringify({ fileName: file.name, totalRows: reports.length, successRows: reports.length, failedRows: 0 }),
+      metadata: JSON.stringify({ fileName, totalRows: reports.length, successRows: reports.length, failedRows: 0 }),
     },
   });
   return Response.json({ success: true, data: { imported: reports.length } }, { status: 201 });
@@ -306,7 +320,9 @@ export async function POST(request: Request) {
       return importReports(request, session.user.id as string);
     }
 
-    const data = reportSchema.parse(await request.json());
+    const body = await request.json() as { path?: string; sheetHint?: string } & Record<string, unknown>;
+    if (typeof body.path === "string") return importReports(request, session.user.id as string, { path: body.path, sheetHint: body.sheetHint });
+    const data = reportSchema.parse(body);
     const report = await prisma.productionReport.create({
       data: {
         ...data,

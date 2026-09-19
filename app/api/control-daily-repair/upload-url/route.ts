@@ -7,9 +7,14 @@ export async function POST(request: Request) {
     const session = await getSession();
     if (!session?.user?.id) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json() as { name?: string };
+    const body = await request.json() as { name?: string; folder?: string; taskId?: string };
     const safeName = String(body.name || "import.xlsx").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
-    const path = `${session.user.id}/imports/${Date.now()}-${safeName}`;
+    const folder = body.folder === "documents"
+      ? "documents"
+      : body.folder === "tasks" && body.taskId && /^[a-zA-Z0-9_-]+$/.test(body.taskId)
+        ? `tasks/${body.taskId}`
+        : "imports";
+    const path = `${session.user.id}/${folder}/${Date.now()}-${safeName}`;
     const upload = await createStorageUploadUrl(path);
     return NextResponse.json({ success: true, data: upload });
   } catch (error) {

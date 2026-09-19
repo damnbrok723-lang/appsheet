@@ -25,6 +25,7 @@ import Link from "next/link";
 import ExcelJS from "exceljs";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type Report = {
   id: string;
@@ -168,11 +169,21 @@ export default function OutputRepairPage() {
     toast.loading("Mengimpor data Output Repair...", { id: "import-repair" });
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      if (!supabaseBrowser) throw new Error("Supabase Storage belum terkonfigurasi di browser");
+      const uploadUrlResponse = await fetch("/api/control-daily-repair/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name }),
+      });
+      const uploadUrlResult = await uploadUrlResponse.json();
+      if (!uploadUrlResponse.ok || !uploadUrlResult.success) throw new Error(uploadUrlResult.message || "Gagal menyiapkan upload file");
+      const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string };
+      const { error: uploadError } = await supabaseBrowser.storage.from(uploadInfo.bucket).uploadToSignedUrl(uploadInfo.path, uploadInfo.token, file);
+      if (uploadError) throw new Error(`Upload Supabase gagal: ${uploadError.message}`);
       const res = await fetch("/api/control-daily-repair", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: uploadInfo.path, sheetHint: "repair" }),
       });
 
       const data = await res.json();

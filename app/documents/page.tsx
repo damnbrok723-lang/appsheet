@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const MAX_UPLOAD_SIZE_MB = 5;
 const uploadSchema = z.object({ name: z.string().min(1), description: z.string().optional() });
@@ -39,6 +40,7 @@ export default function DocumentsPage() {
     mutationFn: async (data: UploadFormData) => {
       const file = fileRef.current?.files?.[0];
       if (!file) throw new Error("Choose a file first");
+      if (!supabaseBrowser) throw new Error("Supabase Storage belum terkonfigurasi di browser");
       if (file.size > MAX_UPLOAD_SIZE_MB * 1024 * 1024) {
         throw new Error(`Ukuran file terlalu besar. Maksimal ${MAX_UPLOAD_SIZE_MB} MB.`);
       }
@@ -47,11 +49,13 @@ export default function DocumentsPage() {
       if (!["image/jpeg", "image/png", "image/webp", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/plain"].includes(file.type) && !allowedExtensions.includes(extension ?? "")) {
         throw new Error("Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT.");
       }
-      const body = new FormData();
-      body.set("file", file);
-      body.set("name", data.name || file.name);
-      body.set("description", data.description || "");
-      const response = await fetch("/api/documents", { method: "POST", body });
+      const uploadUrlResponse = await fetch("/api/control-daily-repair/upload-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: file.name, folder: "documents" }) });
+      const uploadUrlResult = await uploadUrlResponse.json();
+      if (!uploadUrlResponse.ok || !uploadUrlResult.success) throw new Error(uploadUrlResult.message || "Gagal menyiapkan upload");
+      const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string };
+      const { error: uploadError } = await supabaseBrowser.storage.from(uploadInfo.bucket).uploadToSignedUrl(uploadInfo.path, uploadInfo.token, file);
+      if (uploadError) throw new Error(uploadError.message);
+      const response = await fetch("/api/documents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: uploadInfo.path, name: data.name || file.name, description: data.description || "", mimeType: file.type, fileSize: file.size }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Upload failed");
     },

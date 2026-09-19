@@ -64,27 +64,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) {
-      return NextResponse.json({ success: false, message: "File is required" }, { status: 400 });
+    const isJson = req.headers.get("content-type")?.includes("application/json");
+    const body = isJson ? await req.json() as { path?: string; name?: string; description?: string; teamId?: string; mimeType?: string; fileSize?: number } : null;
+    let file: File | null = null;
+    let filePath: string;
+    let mimeType: string;
+    let fileSize: number;
+    let validated: z.infer<typeof createDocumentSchema>;
+    if (body?.path) {
+      if (!body.path.startsWith(`${session.user.id}/documents/`)) return NextResponse.json({ success: false, message: "Document path tidak valid" }, { status: 400 });
+      filePath = body.path;
+      mimeType = body.mimeType || "application/octet-stream";
+      fileSize = Number(body.fileSize || 0);
+      validated = createDocumentSchema.parse({ name: body.name || body.path.split("/").pop() || "document", description: body.description, teamId: body.teamId });
+    } else {
+      const formData = await req.formData();
+      const uploadedFile = formData.get("file");
+      if (!(uploadedFile instanceof File) || uploadedFile.size === 0) return NextResponse.json({ success: false, message: "File is required" }, { status: 400 });
+      if (uploadedFile.size > MAX_UPLOAD_SIZE_BYTES) return NextResponse.json({ success: false, message: "Ukuran file terlalu besar. Maksimal 5 MB per file." }, { status: 413 });
+      if (!isAllowedFile(uploadedFile)) return NextResponse.json({ success: false, message: "Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT." }, { status: 400 });
+      file = uploadedFile;
+      validated = createDocumentSchema.parse({ name: String(formData.get("name") || file.name), description: String(formData.get("description") || "") || undefined, teamId: String(formData.get("teamId") || "") || undefined });
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      filePath = `${session.user.id}/${Date.now()}-${safeName}`;
+      await uploadStorageFile(filePath, file);
+      mimeType = file.type || "application/octet-stream";
+      fileSize = file.size;
     }
-    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-      return NextResponse.json({ success: false, message: "Ukuran file terlalu besar. Maksimal 5 MB per file." }, { status: 413 });
-    }
-    if (!isAllowedFile(file)) {
-      return NextResponse.json({ success: false, message: "Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT." }, { status: 400 });
-    }
-    const validated = createDocumentSchema.parse({
-      name: String(formData.get("name") || file.name),
-      description: String(formData.get("description") || "") || undefined,
-      teamId: String(formData.get("teamId") || "") || undefined,
-    });
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filePath = `${session.user.id}/${Date.now()}-${safeName}`;
-    await uploadStorageFile(filePath, file);
-    const mimeType = file.type || "application/octet-stream";
-    const fileSize = file.size;
 
     const document = await prisma.document.create({
       data: {

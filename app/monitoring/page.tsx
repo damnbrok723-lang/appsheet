@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Activity, Download, FileSpreadsheet, Upload } from "lucide-react";
 import ExcelJS from "exceljs";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type MonitoringEntry = { id: string; date: string; shift: string; operatorCount: number; warehouse: string; teamLeader: string | null };
 type MonitoringData = { entries: MonitoringEntry[]; summary: { totalOperators: number; qtyOk: number; qtyNg: number; okPercentage: number; totalMonthlyManpower: number; warehouseManpower: Record<string, number> } };
@@ -76,9 +77,22 @@ export default function MonitoringPage() {
 
     toast.loading("Mengimpor file Excel / CSV Monitoring...", { id: "import-mon" });
     try {
-      const body = new FormData();
-      body.append("file", file);
-      const res = await fetch("/api/control-daily-repair", { method: "POST", body });
+      if (!supabaseBrowser) throw new Error("Supabase Storage belum terkonfigurasi di browser");
+      const uploadUrlResponse = await fetch("/api/control-daily-repair/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name }),
+      });
+      const uploadUrlResult = await uploadUrlResponse.json();
+      if (!uploadUrlResponse.ok || !uploadUrlResult.success) throw new Error(uploadUrlResult.message || "Gagal menyiapkan upload file");
+      const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string };
+      const { error: uploadError } = await supabaseBrowser.storage.from(uploadInfo.bucket).uploadToSignedUrl(uploadInfo.path, uploadInfo.token, file);
+      if (uploadError) throw new Error(`Upload Supabase gagal: ${uploadError.message}`);
+      const res = await fetch("/api/control-daily-repair", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: uploadInfo.path, sheetHint: "mp repair" }),
+      });
       const result = await res.json();
       if (!res.ok || !result.success) throw new Error(result.message || "Gagal mengimpor file");
 
