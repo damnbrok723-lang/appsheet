@@ -326,6 +326,10 @@ export async function POST(request: Request) {
     const report = await prisma.productionReport.create({
       data: {
         ...data,
+        ncrNumber: data.ncrNumber || undefined,
+        ngNotes: data.ngNotes || undefined,
+        processNotes: data.processNotes || undefined,
+        photoData: data.photoData || undefined,
         pipeTypes: JSON.stringify(data.pipeTypes),
         operatorTypes: JSON.stringify(data.operatorTypes),
         userId: session.user.id as string,
@@ -335,7 +339,8 @@ export async function POST(request: Request) {
     return Response.json({ success: true, data: report }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) return Response.json({ success: false, message: `Validation error: ${error.issues.map((issue) => `${issue.path.join(".") || "form"} - ${issue.message}`).join("; ")}`, errors: error.issues }, { status: 400 });
-    return Response.json({ success: false, message: "Failed to save production report" }, { status: 500 });
+    console.error("Manual production report save failed", error);
+    return Response.json({ success: false, message: "Gagal menyimpan laporan produksi. Periksa log server untuk detail error." }, { status: 500 });
   }
 }
 

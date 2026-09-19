@@ -158,7 +158,7 @@ export default function ReportsPage() {
         body: JSON.stringify({ ...form, qtyOk: Number(form.qtyOk), qtyNg: Number(form.qtyNg) }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Gagal menyimpan laporan");
+      if (!response.ok || !result.success) throw new Error(result.message || "Gagal menyimpan laporan");
     },
     onSuccess: async () => {
       toast.success(editingId ? "Laporan berhasil diperbarui" : "Laporan berhasil disimpan");
