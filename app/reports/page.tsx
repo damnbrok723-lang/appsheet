@@ -234,7 +234,7 @@ export default function ReportsPage() {
     },
   });
 
-  function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
+  async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -242,9 +242,34 @@ export default function ReportsPage() {
       event.target.value = "";
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setForm((current) => ({ ...current, photoData: String(reader.result) }));
-    reader.readAsDataURL(file);
+    if (!file.type.startsWith("image/")) {
+      toast.error("File foto harus berupa gambar");
+      event.target.value = "";
+      return;
+    }
+    const imageUrl = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.src = imageUrl;
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("Foto tidak dapat dibaca"));
+      });
+      const maxDimension = 1600;
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL("image/jpeg", 0.78);
+      if (compressed.length > 4_000_000) {
+        toast.error("Foto masih terlalu besar setelah dikompres");
+        return;
+      }
+      setForm((current) => ({ ...current, photoData: compressed }));
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
   }
 
   function handleImport(event: ChangeEvent<HTMLInputElement>) {
