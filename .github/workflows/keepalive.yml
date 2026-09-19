@@ -10,4 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping app health endpoint
-        run: curl -fsS "${{ secrets.HEALTHCHECK_URL || 'https://your-domain.vercel.app/api/health' }}" > /dev/null
+        env:
+          HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+        run: |
+          test -n "$HEALTHCHECK_URL" || (echo "HEALTHCHECK_URL secret is not configured" && exit 1)
+          curl -fsS "$HEALTHCHECK_URL" > /dev/null

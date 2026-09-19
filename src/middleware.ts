@@ -4,7 +4,7 @@ import { auth } from "../auth";
 export default auth((request) => {
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ["/login", "/"];
+  const publicPaths = ["/login", "/", "/api/health"];
   const isPublic = publicPaths.some((path) => pathname === path || pathname.startsWith(path + "/"));
 
   // Auth.js must handle its own sign-in, callback, CSRF, and error endpoints.
