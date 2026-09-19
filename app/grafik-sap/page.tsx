@@ -173,9 +173,13 @@ export default function GrafikSapPage() {
         });
         const uploadUrlResult = await uploadUrlResponse.json();
         if (!uploadUrlResponse.ok || !uploadUrlResult.success) throw new Error(uploadUrlResult.message || `Upload ${sheetName} gagal`);
-        const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string };
-        const { error: uploadError } = await supabaseBrowser.storage.from(uploadInfo.bucket).uploadToSignedUrl(uploadInfo.path, uploadInfo.token, sheetFile);
-        if (uploadError) throw new Error(`Upload ${sheetName} ke Supabase gagal: ${uploadError.message}`);
+        const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string; signedUrl: string };
+        const uploadResponse = await fetch(uploadInfo.signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": sheetFile.type },
+          body: sheetFile,
+        });
+        if (!uploadResponse.ok) throw new Error(`Upload ${sheetName} ke Supabase gagal (HTTP ${uploadResponse.status}): ${(await uploadResponse.text()).slice(0, 240)}`);
 
         const response = await fetch("/api/control-daily-repair", {
           method: "POST",

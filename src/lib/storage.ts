@@ -34,5 +34,5 @@ export async function createStorageUploadUrl(path: string) {
   });
   const { data, error } = await client.storage.from(storageBucket).createSignedUploadUrl(path);
   if (error || !data?.token) throw new Error(error?.message || "Unable to create storage upload URL");
-  return { bucket: storageBucket, path, token: data.token };
+  return { bucket: storageBucket, path, token: data.token, signedUrl: data.signedUrl };
 }
