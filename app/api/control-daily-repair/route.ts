@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/permissions";
+import { downloadStorageFile } from "@/lib/storage";
 import type { Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
 
@@ -102,13 +103,28 @@ export async function POST(request: Request) {
     const session = await getSession();
     if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
-    const formData = await request.formData();
-    const file = formData.get("file");
-    if (!(file instanceof File)) return Response.json({ success: false, message: "File Control Daily Repair wajib dipilih" }, { status: 400 });
-    if (file.size > 20 * 1024 * 1024) return Response.json({ success: false, message: "Ukuran file maksimal 20 MB" }, { status: 400 });
+    const contentType = request.headers.get("content-type") || "";
+    let workbookBuffer: ArrayBuffer;
+    let requestedSheet = "";
 
-    const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-    const requestedSheet = textValue(formData.get("sheetHint")).toLowerCase();
+    if (contentType.includes("application/json")) {
+      const body = await request.json() as { path?: string; sheetHint?: string };
+      const expectedPrefix = `${session.user.id}/imports/`;
+      if (!body.path || !body.path.startsWith(expectedPrefix)) {
+        return Response.json({ success: false, message: "Import file path tidak valid" }, { status: 400 });
+      }
+      const storedFile = await downloadStorageFile(body.path);
+      workbookBuffer = await storedFile.arrayBuffer();
+      requestedSheet = textValue(body.sheetHint).toLowerCase();
+    } else {
+      const formData = await request.formData();
+      const file = formData.get("file");
+      if (!(file instanceof File)) return Response.json({ success: false, message: "File Control Daily Repair wajib dipilih" }, { status: 400 });
+      workbookBuffer = await file.arrayBuffer();
+      requestedSheet = textValue(formData.get("sheetHint")).toLowerCase();
+    }
+
+    const workbook = XLSX.read(workbookBuffer, { type: "array", cellDates: true });
     let stockSheet: XLSX.WorkSheet | undefined = workbook.Sheets[findSheet(workbook, ["stok grade c", "stok grade", "stok ncr"]) ?? ""];
     let repairSheet: XLSX.WorkSheet | undefined = workbook.Sheets[findSheet(workbook, ["repair", "output repair"]) ?? ""];
     let manpowerSheet: XLSX.WorkSheet | undefined = workbook.Sheets[findSheet(workbook, ["mp repair", "mprepair", "monitoring"]) ?? ""];

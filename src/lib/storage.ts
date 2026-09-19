@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 const storageUrl = process.env.SUPABASE_URL;
 const storageKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const storageBucket = process.env.SUPABASE_STORAGE_BUCKET || "documents";
@@ -23,4 +25,14 @@ export async function downloadStorageFile(path: string) {
   const response = await fetch(`${storageUrl}/storage/v1/object/${storageBucket}/${path}`, { headers: { Authorization: `Bearer ${storageKey}`, apikey: storageKey } });
   if (!response.ok) throw new Error(`Storage download failed: ${await response.text()}`);
   return response;
+}
+
+export async function createStorageUploadUrl(path: string) {
+  const { storageUrl, storageKey, storageBucket } = getStorageConfig();
+  const client = createClient(storageUrl, storageKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data, error } = await client.storage.from(storageBucket).createSignedUploadUrl(path);
+  if (error || !data?.token) throw new Error(error?.message || "Unable to create storage upload URL");
+  return { bucket: storageBucket, path, token: data.token };
 }
