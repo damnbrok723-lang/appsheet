@@ -5,6 +5,7 @@ import { ToastProvider } from "@/components/providers/toast-provider";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { WarmupBanner } from "@/components/system/warmup-banner";
 import { usePathname } from "next/navigation";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +45,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-0"
               }
             >
+              {!isAuthPage && <div className="mx-auto w-full max-w-full"><WarmupBanner /></div>}
               {/* Inner wrapper: full width, never wider than container */}
               <div className="mx-auto w-full max-w-full">
                 {children}

@@ -15,6 +15,8 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
           variant === "secondary" && "bg-secondary text-secondary-foreground",
           variant === "destructive" && "bg-destructive text-destructive-foreground",
           variant === "outline" && "border-input text-foreground",
+          variant === "success" && "border-emerald-500 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+          variant === "warning" && "border-amber-500 bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
           className
         )}
         ref={ref}
