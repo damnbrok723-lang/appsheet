@@ -100,8 +100,8 @@ export default function StokNcrPage() {
       toast.success(`Berhasil mengimpor ${data.data?.stockImported ?? 0} data Stok NCR!`, { id: "import-ncr" });
       notifySapDataUpdated();
       queryClient.invalidateQueries({ queryKey: ["production-reports"] });
-    } catch (err: any) {
-      toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-ncr" });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat impor", { id: "import-ncr" });
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -115,7 +115,7 @@ export default function StokNcrPage() {
   });
 
   const userRole = (sessionQuery.data?.user?.role as string) || "EMPLOYEE";
-  const userPermissions = (sessionQuery.data?.user as any)?.permissions as string[] | undefined;
+  const userPermissions = sessionQuery.data?.user?.permissions as string[] | undefined;
 
   const showPcsCard = useCardPermission("ncr_pcs_total", userRole, userPermissions);
   const showDocsCard = useCardPermission("ncr_documents", userRole, userPermissions);
@@ -141,10 +141,6 @@ export default function StokNcrPage() {
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterFrom, filterTo, searchTerm]);
 
   // Filter khusus data yang memiliki stok NCR / Qty NG > 0
   const ncrReports = useMemo(() => {

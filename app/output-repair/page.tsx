@@ -183,8 +183,8 @@ export default function OutputRepairPage() {
       toast.success(`Berhasil mengimpor ${data.data?.repairImported ?? 0} data Output Repair!`, { id: "import-repair" });
       notifySapDataUpdated();
       queryClient.invalidateQueries({ queryKey: ["output-repair-reports"] });
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengimpor file", { id: "import-repair" });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengimpor file", { id: "import-repair" });
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

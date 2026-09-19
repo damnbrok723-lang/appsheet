@@ -5,6 +5,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { uploadStorageFile } from "@/lib/storage";
 
 const createDocumentSchema = z.object({ name: z.string().min(1), description: z.string().optional(), teamId: z.string().optional() });
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+]);
+
+function isAllowedFile(file: File) {
+  if (ALLOWED_MIME_TYPES.has(file.type)) return true;
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return ["png", "jpg", "jpeg", "webp", "pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(extension ?? "");
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -51,8 +69,11 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json({ success: false, message: "File is required" }, { status: 400 });
     }
-    if (file.size > 25 * 1024 * 1024) {
-      return NextResponse.json({ success: false, message: "Maximum file size is 25 MB" }, { status: 400 });
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      return NextResponse.json({ success: false, message: "Ukuran file terlalu besar. Maksimal 5 MB per file." }, { status: 413 });
+    }
+    if (!isAllowedFile(file)) {
+      return NextResponse.json({ success: false, message: "Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT." }, { status: 400 });
     }
     const validated = createDocumentSchema.parse({
       name: String(formData.get("name") || file.name),

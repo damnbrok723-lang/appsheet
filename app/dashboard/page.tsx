@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -332,8 +332,8 @@ export default function DashboardPage() {
                     width={150}
                   />
                   <Tooltip
-                    formatter={(value: any) => [`${value} Orang`, "Total Operator"]}
-                    labelFormatter={(label: any) => `Tanggal - Gudang - Shift: ${label}`}
+                    formatter={(value: unknown) => [`${value} Orang`, "Total Operator"]}
+                    labelFormatter={(label: unknown) => `Tanggal - Gudang - Shift: ${label}`}
                   />
                   <Bar dataKey="Total" radius={[0, 4, 4, 0]}>
                     {chartData.map((entry, index) => (

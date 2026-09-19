@@ -4,11 +4,12 @@ import { LayoutDashboard, ClipboardList, Wrench, FileBarChart, Activity, User, B
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { hasPermission, CardId } from "@/lib/card-permissions";
 
-const mobileItems: { name: string; href: string; icon: any; permission?: CardId }[] = [
+const mobileItems: { name: string; href: string; icon: LucideIcon; permission?: CardId }[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "nav_dashboard" },
   { name: "Grafik SAP", href: "/grafik-sap", icon: BarChart3, permission: "nav_grafik_sap" },
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },

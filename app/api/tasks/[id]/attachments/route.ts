@@ -12,7 +12,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const formData = await request.formData();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return NextResponse.json({ success: false, message: "File is required" }, { status: 400 });
-  if (file.size > 25 * 1024 * 1024) return NextResponse.json({ success: false, message: "Maximum file size is 25 MB" }, { status: 400 });
+  if (file.size > 5 * 1024 * 1024) return NextResponse.json({ success: false, message: "Ukuran file terlalu besar. Maksimal 5 MB per file." }, { status: 413 });
+  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/plain"]);
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (!allowedTypes.has(file.type) && !["png", "jpg", "jpeg", "webp", "pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(extension ?? "")) {
+    return NextResponse.json({ success: false, message: "Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT." }, { status: 400 });
+  }
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const filePath = `tasks/${id}/${Date.now()}-${safeName}`;
   await uploadStorageFile(filePath, file);

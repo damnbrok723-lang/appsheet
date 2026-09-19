@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
+const MAX_UPLOAD_SIZE_MB = 5;
 const uploadSchema = z.object({ name: z.string().min(1), description: z.string().optional() });
 type UploadFormData = z.infer<typeof uploadSchema>;
 type DocumentItem = { id: string; name: string; mimeType: string; fileSize: number; uploadedBy: { name: string } };
@@ -38,6 +39,14 @@ export default function DocumentsPage() {
     mutationFn: async (data: UploadFormData) => {
       const file = fileRef.current?.files?.[0];
       if (!file) throw new Error("Choose a file first");
+      if (file.size > MAX_UPLOAD_SIZE_MB * 1024 * 1024) {
+        throw new Error(`Ukuran file terlalu besar. Maksimal ${MAX_UPLOAD_SIZE_MB} MB.`);
+      }
+      const allowedExtensions = ["png", "jpg", "jpeg", "webp", "pdf", "doc", "docx", "xls", "xlsx", "txt"];
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      if (!["image/jpeg", "image/png", "image/webp", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/plain"].includes(file.type) && !allowedExtensions.includes(extension ?? "")) {
+        throw new Error("Jenis file tidak didukung. Gunakan JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX, atau TXT.");
+      }
       const body = new FormData();
       body.set("file", file);
       body.set("name", data.name || file.name);
@@ -56,7 +65,7 @@ export default function DocumentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold tracking-tight">Documents</h1><p className="text-muted-foreground">Manage your files and documents.</p></div>
-        <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button><Upload className="mr-2 h-4 w-4" /> Upload</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Upload Document</DialogTitle><DialogDescription>Maximum file size 25 MB.</DialogDescription></DialogHeader><Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"><FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Document name" {...field} /></FormControl><FormMessage /></FormItem>} /><FormField control={form.control} name="description" render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Description" {...field} /></FormControl><FormMessage /></FormItem>} /><FormItem><FormLabel>File</FormLabel><Input ref={fileRef} type="file" required /></FormItem><Button type="submit" disabled={uploadMutation.isPending}>{uploadMutation.isPending ? "Uploading..." : "Upload"}</Button></form></Form></DialogContent></Dialog>
+        <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button><Upload className="mr-2 h-4 w-4" /> Upload</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Upload Document</DialogTitle><DialogDescription>Upload file JPG/PNG/PDF/DOC maksimal {MAX_UPLOAD_SIZE_MB} MB.</DialogDescription></DialogHeader><Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"><FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Document name" {...field} /></FormControl><FormMessage /></FormItem>} /><FormField control={form.control} name="description" render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Description" {...field} /></FormControl><FormMessage /></FormItem>} /><FormItem><FormLabel>File</FormLabel><Input ref={fileRef} type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt" required /></FormItem><Button type="submit" disabled={uploadMutation.isPending}>{uploadMutation.isPending ? "Uploading..." : "Upload"}</Button></form></Form></DialogContent></Dialog>
       </div>
 
       {query.isLoading ? (

@@ -11,7 +11,6 @@ import { Camera, ChevronLeft, ChevronRight, Download, Eye, FileBarChart, Filter,
 import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
-import * as XLSX from "xlsx";
 import { useCardPermission } from "@/lib/card-permissions";
 
 type Report = {
@@ -137,11 +136,6 @@ export default function ReportsPage() {
     setFilterTo(pendingTo);
     setCurrentPage(1);
   }
-
-  // Reset pagination on filter change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterFrom, filterTo]);
 
   // Cek apakah ada perubahan pending yang belum diterapkan
   const hasPendingChange = pendingFrom !== filterFrom || pendingTo !== filterTo;

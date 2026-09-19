@@ -6,8 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useMemo } from "react";
-import { Activity, Download, FileSpreadsheet, Printer, Upload } from "lucide-react";
+import { Activity, Download, FileSpreadsheet, Upload } from "lucide-react";
 import ExcelJS from "exceljs";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 
@@ -86,8 +85,8 @@ export default function MonitoringPage() {
       toast.success(`${result.data?.manpowerImported ?? 0} data monitoring berhasil diimpor!`, { id: "import-mon" });
       notifySapDataUpdated();
       queryClient.invalidateQueries({ queryKey: ["monitoring"] });
-    } catch (err: any) {
-      toast.error(err.message || "Terjadi kesalahan saat impor", { id: "import-mon" });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat impor", { id: "import-mon" });
     } finally {
       if (importRef.current) importRef.current.value = "";
     }
@@ -146,7 +145,7 @@ export default function MonitoringPage() {
   });
   const summary = query.data?.summary;
   // Kelompokkan: Tanggal → Gudang → [shift entries]
-  const groupedData = useMemo(() => {
+  const groupedData = (() => {
     const result: Record<string, { dateLabel: string; warehouses: Record<string, { entries: MonitoringEntry[]; total: number }>; total: number }> = {};
     for (const entry of entries) {
       const dateKey = entry.date.slice(0, 10);
@@ -158,7 +157,7 @@ export default function MonitoringPage() {
       result[dateKey].total += entry.operatorCount;
     }
     return result;
-  }, [entries]);
+  })();
 
   const SHIFT_LABEL: Record<string, string> = { SHIFT_1: "Shift 1", SHIFT_2: "Shift 2", SHIFT_3: "Shift 3", LONGSHIFT_1: "Longshift 1", LONGSHIFT_2: "Longshift 2" };
 

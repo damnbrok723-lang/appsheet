@@ -9,6 +9,8 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+type SessionUserFields = { role?: string; permissions?: string[] };
+
 export const authConfig: AuthConfig = {
   trustHost: true,
   providers: [
@@ -52,7 +54,7 @@ export const authConfig: AuthConfig = {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
-        token.permissions = (user as { permissions?: any }).permissions;
+        token.permissions = (user as SessionUserFields).permissions;
       }
       if (trigger === "update" && session?.permissions) {
         token.permissions = session.permissions;
@@ -63,7 +65,7 @@ export const authConfig: AuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
-        (session.user as { permissions?: any }).permissions = token.permissions;
+        (session.user as SessionUserFields).permissions = token.permissions as string[] | undefined;
       }
       return session;
     },

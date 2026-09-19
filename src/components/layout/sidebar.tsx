@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   LogOut,
   User as UserIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -28,7 +29,7 @@ type UserSession = {
 
 import { hasPermission, CardId } from "@/lib/card-permissions";
 
-const menuItems: { name: string; href: string; icon: any; permission: CardId }[] = [
+const menuItems: { name: string; href: string; icon: LucideIcon; permission: CardId }[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "nav_dashboard" },
   { name: "Grafik SAP", href: "/grafik-sap", icon: BarChart3, permission: "nav_grafik_sap" },
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },
@@ -39,7 +40,6 @@ const menuItems: { name: string; href: string; icon: any; permission: CardId }[]
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<UserSession | null>(null);
 

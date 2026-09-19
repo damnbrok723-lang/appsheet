@@ -24,9 +24,9 @@ function formatShift(shift?: string) {
   return map[shift] || shift;
 }
 
-export default function ReportDetailPage({ params }: { params?: Promise<{ id: string }> | { id: string } }) {
+export default function ReportDetailPage() {
   const routeParams = useParams<{ id: string }>();
-  const id = routeParams?.id || (params as any)?.id;
+  const id = routeParams?.id;
   const query = useQuery({
     queryKey: ["production-report", id],
     queryFn: async () => {
