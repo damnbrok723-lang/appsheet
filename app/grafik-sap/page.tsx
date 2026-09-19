@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCardPermission } from "@/lib/card-permissions";
 import { notifySapDataUpdated, SAP_DATA_UPDATED_EVENT } from "@/lib/sap-sync";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const WAREHOUSE_COLORS = ["#2563eb", "#0d9488", "#6366f1", "#f59e0b", "#e11d48"];
 
@@ -143,8 +144,8 @@ export default function GrafikSapPage() {
   async function importWorkbook(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("File terlalu besar. Maksimal 50 MB.", { id: "import-control" });
+    if (!supabaseBrowser) {
+      toast.error("Supabase Storage belum terkonfigurasi di browser", { id: "import-control" });
       return;
     }
     setIsImporting(true);
@@ -164,10 +165,23 @@ export default function GrafikSapPage() {
         const sheetWorkbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(sheetWorkbook, workbook.Sheets[sheetName], sheetName);
         const bytes = XLSX.write(sheetWorkbook, { bookType: "xlsx", type: "array" });
-        const body = new FormData();
-        body.append("file", new File([bytes], `${sheetName}.xlsx`, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-        body.append("sheetHint", job.hint);
-        const response = await fetch("/api/control-daily-repair", { method: "POST", body });
+        const sheetFile = new File([bytes], `${sheetName}.xlsx`, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const uploadUrlResponse = await fetch("/api/control-daily-repair/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: sheetFile.name }),
+        });
+        const uploadUrlResult = await uploadUrlResponse.json();
+        if (!uploadUrlResponse.ok || !uploadUrlResult.success) throw new Error(uploadUrlResult.message || `Upload ${sheetName} gagal`);
+        const uploadInfo = uploadUrlResult.data as { bucket: string; path: string; token: string };
+        const { error: uploadError } = await supabaseBrowser.storage.from(uploadInfo.bucket).uploadToSignedUrl(uploadInfo.path, uploadInfo.token, sheetFile);
+        if (uploadError) throw new Error(`Upload ${sheetName} ke Supabase gagal: ${uploadError.message}`);
+
+        const response = await fetch("/api/control-daily-repair", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: uploadInfo.path, sheetHint: job.hint }),
+        });
         const responseText = await response.text();
         let result: { success?: boolean; message?: string; data?: Partial<ImportCounts> };
         try {
