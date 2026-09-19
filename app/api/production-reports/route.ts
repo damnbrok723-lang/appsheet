@@ -294,7 +294,7 @@ export async function GET() {
       createdAt: true,
       updatedAt: true,
     },
-    orderBy: { reportDate: "desc" },
+    orderBy: [{ createdAt: "desc" }, { reportDate: "desc" }],
   });
   return Response.json({
     success: true,
