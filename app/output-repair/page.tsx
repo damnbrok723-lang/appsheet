@@ -302,7 +302,7 @@ export default function OutputRepairPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
           <input
             type="file"
             ref={fileInputRef}
@@ -313,7 +313,7 @@ export default function OutputRepairPage() {
           <a
             href="/template-output-repair.xlsx"
             download
-            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground sm:w-auto"
           >
             <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
             Template Kosong
@@ -321,7 +321,7 @@ export default function OutputRepairPage() {
           <a
             href="/Control Daily Repair by SAP.xlsx"
             download
-            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground sm:w-auto"
           >
             <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
             File SAP Asli
@@ -332,17 +332,18 @@ export default function OutputRepairPage() {
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
+            className="w-full sm:w-auto"
           >
             <Upload className="mr-1.5 h-4 w-4" />
             {isImporting ? "Mengimpor..." : "Import Excel"}
           </Button>
 
-          <Button type="button" variant="outline" size="sm" onClick={exportExcel} disabled={!filteredReports.length}>
+          <Button type="button" variant="outline" size="sm" onClick={exportExcel} disabled={!filteredReports.length} className="w-full sm:w-auto">
             <Download className="mr-1.5 h-4 w-4" />
             Export Excel
           </Button>
 
-          <Button asChild size="sm" variant="outline">
+          <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
             <Link href="/reports">
               <Plus className="mr-1.5 h-4 w-4" />
               Input Laporan Baru
@@ -549,7 +550,7 @@ export default function OutputRepairPage() {
               <p className="text-xs text-muted-foreground">Menampilkan {filteredReports.length} transaksi perbaikan</p>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -564,7 +565,7 @@ export default function OutputRepairPage() {
               <select
                 value={shiftFilter}
                 onChange={(e) => setShiftFilter(e.target.value)}
-                className="h-8 rounded-md border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="h-8 w-full rounded-md border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary sm:w-auto"
               >
                 <option value="ALL">Semua Shift</option>
                 <option value="SHIFT_1">Shift 1</option>
@@ -577,17 +578,17 @@ export default function OutputRepairPage() {
               <select
                 value={stockTypeFilter}
                 onChange={(e) => setStockTypeFilter(e.target.value)}
-                className="h-8 rounded-md border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="h-8 w-full rounded-md border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary sm:w-auto"
               >
                 <option value="ALL">Semua ST/LT</option>
                 <option value="ST">ST</option>
                 <option value="LT">LT</option>
               </select>
 
-              <div className="flex items-center gap-1 text-xs">
-                <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-8 min-w-0 max-w-[8.5rem] flex-1 text-xs" />
+              <div className="flex w-full items-center gap-1 text-xs sm:w-auto">
+                <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-8 min-w-0 w-full flex-1 text-xs sm:max-w-[8.5rem]" />
                 <span className="text-muted-foreground">-</span>
-                <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-8 min-w-0 max-w-[8.5rem] flex-1 text-xs" />
+                <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-8 min-w-0 w-full flex-1 text-xs sm:max-w-[8.5rem]" />
               </div>
 
               <Button
@@ -599,8 +600,9 @@ export default function OutputRepairPage() {
                   setFilterTo("");
                   setSearchTerm("");
                   setShiftFilter("ALL");
+                  setStockTypeFilter("ALL");
                 }}
-                className="h-8 px-2 text-xs"
+                className="h-8 w-full px-2 text-xs sm:w-auto"
               >
                 <RefreshCw className="mr-1 h-3 w-3" />
                 Reset
