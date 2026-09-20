@@ -409,7 +409,7 @@ export default function OutputRepairPage() {
             <div className="h-80 w-full">
               {dailyOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyOutputChartData} barSize={18} margin={{ top: 12, right: 18, left: 8, bottom: 8 }}>
+                  <BarChart data={dailyOutputChartData} barSize={18} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
                     <XAxis
                       dataKey="date"
@@ -418,16 +418,6 @@ export default function OutputRepairPage() {
                       tick={{ fill: "#475569", fontSize: 11 }}
                     />
                     <YAxis
-                      yAxisId="left"
-                      allowDecimals={false}
-                      tickLine={false}
-                      axisLine={{ stroke: "#cbd5e1" }}
-                      tick={{ fill: "#475569", fontSize: 11 }}
-                      tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
                       allowDecimals={false}
                       tickLine={false}
                       axisLine={{ stroke: "#cbd5e1" }}
@@ -436,8 +426,8 @@ export default function OutputRepairPage() {
                     />
                     <Legend
                       verticalAlign="top"
-                      align="right"
-                      wrapperStyle={{ paddingBottom: 8, fontSize: 11 }}
+                      align="left"
+                      wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }}
                     />
                     <Tooltip
                       formatter={(value, name) => {
@@ -446,8 +436,8 @@ export default function OutputRepairPage() {
                         return [`${numericValue.toLocaleString("id-ID")} ${name === "qty" ? "pcs" : "kg"}`, label];
                       }}
                     />
-                    <Bar yAxisId="left" dataKey="qty" name="Qty" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
-                    <Bar yAxisId="right" dataKey="tonnageKg" name="Tonase" fill="#14b8a6" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
+                    <Bar dataKey="qty" name="Qty" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
+                    <Bar dataKey="tonnageKg" name="Tonase" fill="#14b8a6" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
