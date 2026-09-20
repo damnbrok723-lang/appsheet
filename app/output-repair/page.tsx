@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ExcelJS from "exceljs";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
@@ -424,11 +424,6 @@ export default function OutputRepairPage() {
                       tick={{ fill: "#475569", fontSize: 11 }}
                       tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
                     />
-                    <Legend
-                      verticalAlign="top"
-                      align="left"
-                      wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }}
-                    />
                     <Tooltip
                       formatter={(value, name) => {
                         const numericValue = Number(value ?? 0);
@@ -490,9 +485,6 @@ export default function OutputRepairPage() {
               <h2 className="text-base font-bold tracking-tight text-slate-800">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
               <p className="text-xs text-slate-500">Ringkasan per tanggal dan per gudang</p>
             </div>
-            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
-              Grand Total {grandTotalQty.toLocaleString("id-ID")} pcs / {grandTotalTonnage.toLocaleString("id-ID")} kg
-            </span>
           </div>
         </CardHeader>
         <CardContent className="p-0">
