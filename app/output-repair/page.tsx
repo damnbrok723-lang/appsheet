@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ExcelJS from "exceljs";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
@@ -160,33 +160,6 @@ export default function OutputRepairPage() {
     }
     return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
   }, [filteredReports]);
-
-  const pivotDateRows = useMemo(() => {
-    const map: Record<string, { date: string; qty: number; tonnageKg: number }> = {};
-    for (const report of filteredReports) {
-      const rawDate = report.reportDate.slice(0, 10);
-      const current = map[rawDate] ?? { date: rawDate, qty: 0, tonnageKg: 0 };
-      current.qty += report.qtyOk + report.qtyNg;
-      current.tonnageKg += Number(report.tonnageKg ?? 0);
-      map[rawDate] = current;
-    }
-    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
-  }, [filteredReports]);
-
-  const pivotWarehouseRows = useMemo(() => {
-    const map: Record<string, { warehouse: string; qty: number; tonnageKg: number }> = {};
-    for (const report of filteredReports) {
-      const warehouse = report.warehouse || "Tanpa Gudang";
-      const current = map[warehouse] ?? { warehouse, qty: 0, tonnageKg: 0 };
-      current.qty += report.qtyOk + report.qtyNg;
-      current.tonnageKg += Number(report.tonnageKg ?? 0);
-      map[warehouse] = current;
-    }
-    return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
-  }, [filteredReports]);
-
-  const grandTotalQty = pivotDateRows.reduce((sum, row) => sum + row.qty, 0);
-  const grandTotalTonnage = pivotDateRows.reduce((sum, row) => sum + row.tonnageKg, 0);
 
   const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
   const paginatedReports = useMemo(() => {
@@ -399,7 +372,7 @@ export default function OutputRepairPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
           <CardHeader className="border-b border-slate-200 pb-2 pt-4">
             <h2 className="text-base font-bold tracking-tight text-slate-800">Daily Output Repair</h2>
@@ -423,6 +396,11 @@ export default function OutputRepairPage() {
                       axisLine={{ stroke: "#cbd5e1" }}
                       tick={{ fill: "#475569", fontSize: 11 }}
                       tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      align="left"
+                      wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }}
                     />
                     <Tooltip
                       formatter={(value, name) => {
@@ -465,6 +443,11 @@ export default function OutputRepairPage() {
                       axisLine={{ stroke: "#cbd5e1" }}
                       tick={{ fill: "#475569", fontSize: 11 }}
                       tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      align="left"
+                      wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }}
                     />
                     <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} />
                     <Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
