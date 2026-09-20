@@ -409,11 +409,36 @@ export default function OutputRepairPage() {
             <div className="h-80 w-full">
               {dailyOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyOutputChartData} margin={{ top: 8, right: 20, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" allowDecimals={false} tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`} />
-                    <YAxis yAxisId="right" orientation="right" allowDecimals={false} tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`} />
+                  <BarChart data={dailyOutputChartData} barSize={18} margin={{ top: 12, right: 18, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={{ stroke: "#cbd5e1" }}
+                      tick={{ fill: "#475569", fontSize: 11 }}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      allowDecimals={false}
+                      tickLine={false}
+                      axisLine={{ stroke: "#cbd5e1" }}
+                      tick={{ fill: "#475569", fontSize: 11 }}
+                      tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      allowDecimals={false}
+                      tickLine={false}
+                      axisLine={{ stroke: "#cbd5e1" }}
+                      tick={{ fill: "#475569", fontSize: 11 }}
+                      tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      align="right"
+                      wrapperStyle={{ paddingBottom: 8, fontSize: 11 }}
+                    />
                     <Tooltip
                       formatter={(value, name) => {
                         const numericValue = Number(value ?? 0);
@@ -421,8 +446,8 @@ export default function OutputRepairPage() {
                         return [`${numericValue.toLocaleString("id-ID")} ${name === "qty" ? "pcs" : "kg"}`, label];
                       }}
                     />
-                    <Bar yAxisId="left" dataKey="qty" name="qty" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="right" dataKey="tonnageKg" name="tonnageKg" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="qty" name="Qty" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
+                    <Bar yAxisId="right" dataKey="tonnageKg" name="Tonase" fill="#14b8a6" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -441,12 +466,23 @@ export default function OutputRepairPage() {
             <div className="h-80 w-full">
               {warehouseOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={warehouseOutputChartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="warehouse" />
-                    <YAxis allowDecimals={false} />
+                  <BarChart data={warehouseOutputChartData} barSize={28} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                    <XAxis
+                      dataKey="warehouse"
+                      tickLine={false}
+                      axisLine={{ stroke: "#cbd5e1" }}
+                      tick={{ fill: "#475569", fontSize: 11 }}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tickLine={false}
+                      axisLine={{ stroke: "#cbd5e1" }}
+                      tick={{ fill: "#475569", fontSize: 11 }}
+                      tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
+                    />
                     <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} />
-                    <Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
