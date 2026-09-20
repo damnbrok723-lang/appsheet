@@ -45,6 +45,8 @@ type Report = {
   processNotes?: string | null;
   sourceType?: string;
   warehouse?: string | null;
+  stockType?: string | null;
+  tonnageKg?: number | null;
   status: string;
 };
 
@@ -68,6 +70,7 @@ export default function OutputRepairPage() {
   const [filterTo, setFilterTo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [shiftFilter, setShiftFilter] = useState("ALL");
+  const [stockTypeFilter, setStockTypeFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -97,6 +100,7 @@ export default function OutputRepairPage() {
       if (filterFrom && date < filterFrom) return false;
       if (filterTo && date > filterTo) return false;
       if (shiftFilter !== "ALL" && r.shift !== shiftFilter) return false;
+      if (stockTypeFilter !== "ALL" && (r.stockType ?? "").toUpperCase() !== stockTypeFilter) return false;
 
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
@@ -108,7 +112,7 @@ export default function OutputRepairPage() {
       }
       return true;
     });
-  }, [reportsQuery.data, filterFrom, filterTo, shiftFilter, searchTerm]);
+  }, [reportsQuery.data, filterFrom, filterTo, shiftFilter, stockTypeFilter, searchTerm]);
 
   const metrics = useMemo(() => {
     let totalOk = 0;
@@ -130,15 +134,17 @@ export default function OutputRepairPage() {
   }, [filteredReports]);
 
   const dailyOutputChartData = useMemo(() => {
-    const map: Record<string, { rawDate: string; date: string; output: number }> = {};
+    const map: Record<string, { rawDate: string; date: string; qty: number; tonnageKg: number }> = {};
     for (const report of filteredReports) {
       const rawDate = report.reportDate.slice(0, 10);
       const current = map[rawDate] ?? {
         rawDate,
         date: new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }),
-        output: 0,
+        qty: 0,
+        tonnageKg: 0,
       };
-      current.output += report.qtyOk + report.qtyNg;
+      current.qty += report.qtyOk + report.qtyNg;
+      current.tonnageKg += Number(report.tonnageKg ?? 0);
       map[rawDate] = current;
     }
     return Object.values(map).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
@@ -369,18 +375,26 @@ export default function OutputRepairPage() {
         <Card>
           <CardHeader>
             <h2 className="text-base font-semibold">Daily Output Repair</h2>
-            <p className="text-xs text-muted-foreground">Total Qty OK + Qty NG per tanggal</p>
+            <p className="text-xs text-muted-foreground">Qty dan tonase per tanggal</p>
           </CardHeader>
           <CardContent>
             <div className="h-80 w-full">
               {dailyOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyOutputChartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                  <BarChart data={dailyOutputChartData} margin={{ top: 8, right: 20, left: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} />
-                    <Bar dataKey="output" name="Output Repair" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                    <YAxis yAxisId="left" allowDecimals={false} tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`} />
+                    <YAxis yAxisId="right" orientation="right" allowDecimals={false} tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`} />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        const numericValue = Number(value ?? 0);
+                        const label = name === "qty" ? "Qty (pcs)" : "Tonase (kg)";
+                        return [`${numericValue.toLocaleString("id-ID")} ${name === "qty" ? "pcs" : "kg"}`, label];
+                      }}
+                    />
+                    <Bar yAxisId="left" dataKey="qty" name="qty" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="tonnageKg" name="tonnageKg" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -450,6 +464,16 @@ export default function OutputRepairPage() {
                 <option value="SHIFT_3">Shift 3</option>
                 <option value="LONGSHIFT_1">Longshift 1</option>
                 <option value="LONGSHIFT_2">Longshift 2</option>
+              </select>
+
+              <select
+                value={stockTypeFilter}
+                onChange={(e) => setStockTypeFilter(e.target.value)}
+                className="h-8 rounded-md border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">Semua ST/LT</option>
+                <option value="ST">ST</option>
+                <option value="LT">LT</option>
               </select>
 
               <div className="flex items-center gap-1 text-xs">
