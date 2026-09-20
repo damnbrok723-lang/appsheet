@@ -161,6 +161,33 @@ export default function OutputRepairPage() {
     return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
   }, [filteredReports]);
 
+  const pivotDateRows = useMemo(() => {
+    const map: Record<string, { date: string; qty: number; tonnageKg: number }> = {};
+    for (const report of filteredReports) {
+      const rawDate = report.reportDate.slice(0, 10);
+      const current = map[rawDate] ?? { date: rawDate, qty: 0, tonnageKg: 0 };
+      current.qty += report.qtyOk + report.qtyNg;
+      current.tonnageKg += Number(report.tonnageKg ?? 0);
+      map[rawDate] = current;
+    }
+    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredReports]);
+
+  const pivotWarehouseRows = useMemo(() => {
+    const map: Record<string, { warehouse: string; qty: number; tonnageKg: number }> = {};
+    for (const report of filteredReports) {
+      const warehouse = report.warehouse || "Tanpa Gudang";
+      const current = map[warehouse] ?? { warehouse, qty: 0, tonnageKg: 0 };
+      current.qty += report.qtyOk + report.qtyNg;
+      current.tonnageKg += Number(report.tonnageKg ?? 0);
+      map[warehouse] = current;
+    }
+    return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
+  }, [filteredReports]);
+
+  const grandTotalQty = pivotDateRows.reduce((sum, row) => sum + row.qty, 0);
+  const grandTotalTonnage = pivotDateRows.reduce((sum, row) => sum + row.tonnageKg, 0);
+
   const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
   const paginatedReports = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -428,6 +455,87 @@ export default function OutputRepairPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="overflow-hidden border bg-card shadow-sm">
+        <CardHeader className="border-b bg-muted/30 py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
+              <p className="text-xs text-muted-foreground">Ringkasan per tanggal dan per gudang</p>
+            </div>
+            <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-700 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300">
+              Grand Total {grandTotalQty.toLocaleString("id-ID")} pcs / {grandTotalTonnage.toLocaleString("id-ID")} kg
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="grid gap-0 lg:grid-cols-[1.6fr_1fr]">
+            <div className="overflow-auto border-r">
+              <table className="min-w-full border-collapse text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-left font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Post.Date</th>
+                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Qty (pcs)</th>
+                    <th className="border-b bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Tonase (Kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pivotDateRows.length ? (
+                    pivotDateRows.map((row) => (
+                      <tr key={row.date} className="odd:bg-background even:bg-muted/10">
+                        <td className="border-b border-r px-3 py-2 text-left">{new Date(`${row.date}T00:00:00`).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
+                        <td className="border-b border-r px-3 py-2 text-right">{row.qty.toLocaleString("id-ID")}</td>
+                        <td className="border-b px-3 py-2 text-right">{row.tonnageKg.toLocaleString("id-ID")}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">Belum ada data</td>
+                    </tr>
+                  )}
+                  <tr className="bg-primary/5 font-semibold">
+                    <td className="border-t border-r px-3 py-2 text-left">Grand Total</td>
+                    <td className="border-t border-r px-3 py-2 text-right">{grandTotalQty.toLocaleString("id-ID")}</td>
+                    <td className="border-t px-3 py-2 text-right">{grandTotalTonnage.toLocaleString("id-ID")}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="overflow-auto">
+              <table className="min-w-full border-collapse text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-left font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Gudang</th>
+                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Qty (pcs)</th>
+                    <th className="border-b bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Tonase (Kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pivotWarehouseRows.length ? (
+                    pivotWarehouseRows.map((row) => (
+                      <tr key={row.warehouse} className="odd:bg-background even:bg-muted/10">
+                        <td className="border-b border-r px-3 py-2 text-left">{row.warehouse}</td>
+                        <td className="border-b border-r px-3 py-2 text-right">{row.qty.toLocaleString("id-ID")}</td>
+                        <td className="border-b px-3 py-2 text-right">{row.tonnageKg.toLocaleString("id-ID")}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">Belum ada data gudang</td>
+                    </tr>
+                  )}
+                  <tr className="bg-sky-100 font-semibold text-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
+                    <td className="border-t border-r px-3 py-2 text-left">Grand Total</td>
+                    <td className="border-t border-r px-3 py-2 text-right">{grandTotalQty.toLocaleString("id-ID")}</td>
+                    <td className="border-t px-3 py-2 text-right">{grandTotalTonnage.toLocaleString("id-ID")}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* FILTER & DATA TABLE CARD */}
       <Card>
