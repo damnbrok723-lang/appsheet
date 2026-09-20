@@ -463,7 +463,7 @@ export default function OutputRepairPage() {
               <h2 className="text-base font-semibold">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
               <p className="text-xs text-muted-foreground">Ringkasan per tanggal dan per gudang</p>
             </div>
-            <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-700 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300">
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
               Grand Total {grandTotalQty.toLocaleString("id-ID")} pcs / {grandTotalTonnage.toLocaleString("id-ID")} kg
             </span>
           </div>
@@ -474,9 +474,9 @@ export default function OutputRepairPage() {
               <table className="min-w-full border-collapse text-sm">
                 <thead className="bg-muted/40">
                   <tr>
-                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-left font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Post.Date</th>
-                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Qty (pcs)</th>
-                    <th className="border-b bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Tonase (Kg)</th>
+                    <th className="border-b border-r bg-slate-50 px-3 py-2 text-left font-semibold text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">Post.Date</th>
+                    <th className="border-b border-r bg-slate-50 px-3 py-2 text-right font-semibold text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">Sum of Qty (pcs)</th>
+                    <th className="border-b bg-slate-50 px-3 py-2 text-right font-semibold text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">Sum of Tonase (Kg)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -506,9 +506,9 @@ export default function OutputRepairPage() {
               <table className="min-w-full border-collapse text-sm">
                 <thead className="bg-muted/40">
                   <tr>
-                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-left font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Gudang</th>
-                    <th className="border-b border-r bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Qty (pcs)</th>
-                    <th className="border-b bg-sky-50 px-3 py-2 text-right font-semibold text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">Sum of Tonase (Kg)</th>
+                    <th className="border-b border-r bg-slate-50 px-3 py-2 text-left font-semibold text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">Gudang</th>
+                    <th className="border-b border-r bg-slate-50 px-3 py-2 text-right font-semibold text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">Sum of Qty (pcs)</th>
+                    <th className="border-b bg-slate-50 px-3 py-2 text-right font-semibold text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">Sum of Tonase (Kg)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -525,7 +525,7 @@ export default function OutputRepairPage() {
                       <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">Belum ada data gudang</td>
                     </tr>
                   )}
-                  <tr className="bg-sky-100 font-semibold text-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
+                  <tr className="bg-slate-100 font-semibold text-slate-800 dark:bg-slate-900/70 dark:text-slate-100">
                     <td className="border-t border-r px-3 py-2 text-left">Grand Total</td>
                     <td className="border-t border-r px-3 py-2 text-right">{grandTotalQty.toLocaleString("id-ID")}</td>
                     <td className="border-t px-3 py-2 text-right">{grandTotalTonnage.toLocaleString("id-ID")}</td>
