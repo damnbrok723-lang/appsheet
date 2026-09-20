@@ -400,12 +400,12 @@ export default function OutputRepairPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <h2 className="text-base font-semibold">Daily Output Repair</h2>
-            <p className="text-xs text-muted-foreground">Qty dan tonase per tanggal</p>
+        <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
+          <CardHeader className="border-b border-slate-200 pb-3 pt-4">
+            <h2 className="text-base font-semibold text-slate-800">Daily Output Repair</h2>
+            <p className="text-xs text-slate-500">Qty dan tonase per tanggal</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <div className="h-80 w-full">
               {dailyOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -457,12 +457,12 @@ export default function OutputRepairPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <h2 className="text-base font-semibold">Output Repair per Gudang</h2>
-            <p className="text-xs text-muted-foreground">Total Qty OK + Qty NG berdasarkan gudang</p>
+        <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
+          <CardHeader className="border-b border-slate-200 pb-3 pt-4">
+            <h2 className="text-base font-semibold text-slate-800">Output Repair per Gudang</h2>
+            <p className="text-xs text-slate-500">Total Qty OK + Qty NG berdasarkan gudang</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <div className="h-80 w-full">
               {warehouseOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -493,14 +493,14 @@ export default function OutputRepairPage() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden border bg-card shadow-sm">
-        <CardHeader className="border-b bg-muted/30 py-3">
+      <Card className="overflow-hidden border border-slate-200 bg-slate-50/40 shadow-none">
+        <CardHeader className="border-b border-slate-200 bg-slate-50/70 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
-              <p className="text-xs text-muted-foreground">Ringkasan per tanggal dan per gudang</p>
+              <h2 className="text-base font-semibold text-slate-800">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
+              <p className="text-xs text-slate-500">Ringkasan per tanggal dan per gudang</p>
             </div>
-            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
+            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
               Grand Total {grandTotalQty.toLocaleString("id-ID")} pcs / {grandTotalTonnage.toLocaleString("id-ID")} kg
             </span>
           </div>
@@ -586,7 +586,7 @@ export default function OutputRepairPage() {
               <p className="text-xs text-muted-foreground">Menampilkan {filteredReports.length} transaksi perbaikan</p>
             </div>
 
-            <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex w-full flex-col gap-2 rounded-md border border-slate-200 bg-slate-50/60 p-2 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
