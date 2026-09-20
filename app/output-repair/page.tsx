@@ -293,11 +293,11 @@ export default function OutputRepairPage() {
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">
             <Wrench className="h-7 w-7 text-primary" />
             Output Repair Pipa
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="mt-0.5 text-sm text-slate-500">
             Laporan hasil perbaikan pipa (Qty OK &amp; Qty NG) per operator dan per shift.
           </p>
         </div>
@@ -401,8 +401,8 @@ export default function OutputRepairPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
-          <CardHeader className="border-b border-slate-200 pb-3 pt-4">
-            <h2 className="text-base font-semibold text-slate-800">Daily Output Repair</h2>
+          <CardHeader className="border-b border-slate-200 pb-2 pt-4">
+            <h2 className="text-base font-bold tracking-tight text-slate-800">Daily Output Repair</h2>
             <p className="text-xs text-slate-500">Qty dan tonase per tanggal</p>
           </CardHeader>
           <CardContent className="pt-4">
@@ -458,8 +458,8 @@ export default function OutputRepairPage() {
         </Card>
 
         <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
-          <CardHeader className="border-b border-slate-200 pb-3 pt-4">
-            <h2 className="text-base font-semibold text-slate-800">Output Repair per Gudang</h2>
+          <CardHeader className="border-b border-slate-200 pb-2 pt-4">
+            <h2 className="text-base font-bold tracking-tight text-slate-800">Output Repair per Gudang</h2>
             <p className="text-xs text-slate-500">Total Qty OK + Qty NG berdasarkan gudang</p>
           </CardHeader>
           <CardContent className="pt-4">
@@ -497,7 +497,7 @@ export default function OutputRepairPage() {
         <CardHeader className="border-b border-slate-200 bg-slate-50/70 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold text-slate-800">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
+              <h2 className="text-base font-bold tracking-tight text-slate-800">{stockTypeFilter === "ALL" ? "ST/LT" : stockTypeFilter} Pivot Summary</h2>
               <p className="text-xs text-slate-500">Ringkasan per tanggal dan per gudang</p>
             </div>
             <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
@@ -586,7 +586,7 @@ export default function OutputRepairPage() {
               <p className="text-xs text-muted-foreground">Menampilkan {filteredReports.length} transaksi perbaikan</p>
             </div>
 
-            <div className="flex w-full flex-col gap-2 rounded-md border border-slate-200 bg-slate-50/60 p-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex w-full flex-col gap-2 rounded-md border border-slate-200 bg-slate-50/60 p-2.5 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
