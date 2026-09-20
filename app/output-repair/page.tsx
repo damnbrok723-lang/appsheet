@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ExcelJS from "exceljs";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
