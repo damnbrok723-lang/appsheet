@@ -1,17 +1,37 @@
-name: Keep app alive
+name: 🔄 Keep Alive - Supabase & Vercel
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
-  workflow_dispatch:
+    # Ping setiap 6 jam: 00:00, 06:00, 12:00, 18:00 UTC = 07:00, 13:00, 19:00, 01:00 WIB
+    # Cukup untuk cegah Supabase idle (pause setelah 7 hari tidak aktif)
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch: # Bisa dijalankan manual dari tab Actions GitHub
 
 jobs:
-  ping:
+  keepalive:
+    name: Ping Supabase & Vercel
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     steps:
-      - name: Ping app health endpoint
-        env:
-          HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      - name: 🏓 Ping health endpoint (Vercel)
         run: |
-          test -n "$HEALTHCHECK_URL" || (echo "HEALTHCHECK_URL secret is not configured" && exit 1)
-          curl -fsS "$HEALTHCHECK_URL" > /dev/null
+          echo "Pinging app health check..."
+          RESPONSE=$(curl -fsS --max-time 30 "${{ vars.APP_URL }}/api/health" 2>&1) || {
+            echo "GAGAL ping! Response: $RESPONSE"
+            exit 1
+          }
+          echo "OK - App alive: $RESPONSE"
+
+      - name: 🗄️ Wake up Supabase database
+        run: |
+          echo "Waking up Supabase..."
+          curl -fsS --max-time 30 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ vars.SUPABASE_URL }}/rest/v1/" > /dev/null && echo "OK - Supabase awake!" || echo "Supabase ping partial (normal)"
+
+      - name: 📊 Log selesai
+        if: always()
+        run: |
+          echo "Keep-alive selesai: $(date -u)"
