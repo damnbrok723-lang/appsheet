@@ -210,10 +210,60 @@ export default function MonitoringPage() {
         <p className="mt-2 text-2xl font-extrabold text-foreground">{summary?.warehouseManpower?.["1"] ?? 0}</p>
       </Card>
     </div>
-    <Card className="p-5">
+    {/* CARD FORM INPUT MONITORING (DIATAS) */}
+    <Card className="p-5 border shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span>✍️</span> Input &amp; Kelola Data Monitoring
+          </h2>
+          <p className="text-xs text-muted-foreground">Format Excel/CSV: Tanggal, Shift, Jumlah Operator, Gudang, Kepala Regu</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/template-monitoring-mp-repair.xlsx"
+            download
+            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+            Template Kosong
+          </a>
+          <a
+            href="/Control Daily Repair by SAP.xlsx"
+            download
+            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
+            File SAP Asli
+          </a>
+          <label className="inline-flex h-8 cursor-pointer items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            Import Excel / CSV
+            <input ref={importRef} type="file" accept=".csv, .xlsx, .xls" className="sr-only" onChange={importCsv} />
+          </label>
+          <Button type="button" variant="outline" size="sm" onClick={exportMonitoringExcel} className="h-8 text-xs">
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Export Excel
+          </Button>
+        </div>
+      </div>
+      <form onSubmit={submit} className="grid gap-4 md:grid-cols-5">
+        <label className="space-y-2 text-sm font-medium">Tanggal<Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label>
+        <label className="space-y-2 text-sm font-medium">Shift<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={shift} onChange={(event) => setShift(event.target.value)}>{shiftOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="space-y-2 text-sm font-medium">Jumlah Operator<Input type="number" min="0" value={operatorCount} onChange={(event) => setOperatorCount(event.target.value)} required /></label>
+        <label className="space-y-2 text-sm font-medium">Gudang<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={warehouse} onChange={(event) => setWarehouse(event.target.value)}>{warehouses.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="space-y-2 text-sm font-medium">Kepala Regu<Input value={teamLeader} onChange={(event) => setTeamLeader(event.target.value)} required /></label>
+        <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-5">{saveMutation.isPending ? "Menyimpan..." : "Simpan Data Monitoring"}</Button>
+      </form>
+    </Card>
+
+    {/* LIST RIWAYAT MONITORING DENGAN SCROLL CONTAINER */}
+    <Card className="p-5 border shadow-sm">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Man Power Repair ST</h2>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span>📊</span> Man Power Repair ST
+          </h2>
           <p className="text-xs text-muted-foreground">Pengelompokan: Tanggal → Gudang → Shift → Jumlah Operator</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -236,9 +286,10 @@ export default function MonitoringPage() {
       {Object.keys(groupedData).length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Belum ada data pada rentang tanggal ini.</p>
       ) : (
-        <div className="space-y-4">
+        /* AREA SCROLL CONTAINER BUMPA DAFTAR DATA */
+        <div className="max-h-[460px] overflow-y-auto pr-1 space-y-4 rounded-md border p-2 bg-muted/10">
           {Object.entries(groupedData).map(([dateKey, dateGroup]) => (
-            <div key={dateKey} className="overflow-hidden rounded-xl border">
+            <div key={dateKey} className="overflow-hidden rounded-xl border bg-card">
               {/* Header Tanggal */}
               <div className="flex items-center justify-between bg-muted/60 px-4 py-2.5">
                 <span className="flex items-center gap-2 text-sm font-bold">
@@ -298,49 +349,6 @@ export default function MonitoringPage() {
           ))}
         </div>
       )}
-    </Card>
-    <Card className="p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Input &amp; Kelola Data Monitoring</h2>
-          <p className="text-xs text-muted-foreground">Format Excel/CSV: Tanggal, Shift, Jumlah Operator, Gudang, Kepala Regu</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href="/template-monitoring-mp-repair.xlsx"
-            download
-            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-            Template Kosong
-          </a>
-          <a
-            href="/Control Daily Repair by SAP.xlsx"
-            download
-            className="inline-flex h-8 items-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
-            File SAP Asli
-          </a>
-          <label className="inline-flex h-8 cursor-pointer items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
-            Import Excel / CSV
-            <input ref={importRef} type="file" accept=".csv, .xlsx, .xls" className="sr-only" onChange={importCsv} />
-          </label>
-          <Button type="button" variant="outline" size="sm" onClick={exportMonitoringExcel} className="h-8 text-xs">
-            <Download className="mr-1.5 h-3.5 w-3.5" />
-            Export Excel
-          </Button>
-        </div>
-      </div>
-      <form onSubmit={submit} className="grid gap-4 md:grid-cols-5">
-        <label className="space-y-2 text-sm font-medium">Tanggal<Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label>
-        <label className="space-y-2 text-sm font-medium">Shift<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={shift} onChange={(event) => setShift(event.target.value)}>{shiftOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="space-y-2 text-sm font-medium">Jumlah Operator<Input type="number" min="0" value={operatorCount} onChange={(event) => setOperatorCount(event.target.value)} required /></label>
-        <label className="space-y-2 text-sm font-medium">Gudang<select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={warehouse} onChange={(event) => setWarehouse(event.target.value)}>{warehouses.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-        <label className="space-y-2 text-sm font-medium">Kepala Regu<Input value={teamLeader} onChange={(event) => setTeamLeader(event.target.value)} required /></label>
-        <Button type="submit" disabled={saveMutation.isPending} className="md:col-span-5">{saveMutation.isPending ? "Menyimpan..." : "Simpan Data Monitoring"}</Button>
-      </form>
     </Card>
   </div>;
 }

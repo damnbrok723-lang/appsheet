@@ -330,6 +330,10 @@ model ProductionReport {
   sourceType    String   @default("MANUAL") @map("source_type")
   warehouse     String?
   tonnageKg     Float?   @map("tonnage_kg")
+  grQtyPcs      Int?     @map("gr_qty_pcs")
+  giQtyPcs      Int?     @map("gi_qty_pcs")
+  grBaseUnit    Float?   @map("gr_base_unit")
+  giBaseUnit    Float?   @map("gi_base_unit")
   stockGrade    String?  @map("stock_grade")
   stockType     String?  @map("stock_type")
   photoData     String?  @map("photo_data")

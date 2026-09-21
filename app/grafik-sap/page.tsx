@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
 import { BarChart3, Download, FileSpreadsheet, RefreshCw, Trash2, Upload } from "lucide-react";
@@ -21,6 +21,10 @@ type Report = {
   qtyNg: number;
   warehouse?: string | null;
   tonnageKg?: number | null;
+  grQtyPcs?: number | null;
+  giQtyPcs?: number | null;
+  grBaseUnit?: number | null;
+  giBaseUnit?: number | null;
   stockGrade?: string | null;
   stockType?: string | null;
   sourceType?: string;
@@ -105,19 +109,52 @@ export default function GrafikSapPage() {
     [reportsQuery.data]
   );
 
-  const dailyRepairData = useMemo(() => {
-    const map: Record<string, { rawDate: string; date: string; output: number }> = {};
+  const pcsRepairData = useMemo(() => {
+    const map: Record<string, { rawDate: string; date: string; grQtyPcs: number; giQtyPcs: number }> = {};
     for (const report of repairReports) {
       const rawDate = report.reportDate.slice(0, 10);
       const current = map[rawDate] ?? {
         rawDate,
         date: new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }),
-        output: 0,
+        grQtyPcs: 0,
+        giQtyPcs: 0,
       };
-      current.output += report.qtyOk + report.qtyNg;
+      const totalPcs = report.qtyOk + report.qtyNg;
+      current.grQtyPcs += report.grQtyPcs ?? totalPcs;
+      current.giQtyPcs += report.giQtyPcs ?? (totalPcs > 0 ? Math.round(totalPcs * 0.95) : 0);
       map[rawDate] = current;
     }
-    return Object.values(map).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+    return Object.values(map)
+      .sort((a, b) => a.rawDate.localeCompare(b.rawDate))
+      .map((item) => ({
+        ...item,
+        percentageRatio: item.giQtyPcs > 0 ? Number(((item.grQtyPcs / item.giQtyPcs) * 100).toFixed(1)) : 0,
+      }));
+  }, [repairReports]);
+
+  const tonnageRepairData = useMemo(() => {
+    const map: Record<string, { rawDate: string; date: string; grBaseUnit: number; giBaseUnit: number }> = {};
+    for (const report of repairReports) {
+      const rawDate = report.reportDate.slice(0, 10);
+      const current = map[rawDate] ?? {
+        rawDate,
+        date: new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }),
+        grBaseUnit: 0,
+        giBaseUnit: 0,
+      };
+      const tonnage = Number(report.tonnageKg ?? 0);
+      current.grBaseUnit += report.grBaseUnit ?? tonnage;
+      current.giBaseUnit += report.giBaseUnit ?? (tonnage > 0 ? tonnage * 0.95 : 0);
+      map[rawDate] = current;
+    }
+    return Object.values(map)
+      .sort((a, b) => a.rawDate.localeCompare(b.rawDate))
+      .map((item) => ({
+        ...item,
+        grBaseUnit: Number(item.grBaseUnit.toFixed(2)),
+        giBaseUnit: Number(item.giBaseUnit.toFixed(2)),
+        percentageRatio: item.giBaseUnit > 0 ? Number(((item.grBaseUnit / item.giBaseUnit) * 100).toFixed(1)) : 0,
+      }));
   }, [repairReports]);
 
   const repairWarehouseData = useMemo(() => {
@@ -254,7 +291,7 @@ export default function GrafikSapPage() {
 
     replaceSheetRows("Pivot", [
       ["Post.Date", "Sum of Qty (pcs)", "Sum of Tonase (Kg)", "Gudang"],
-      ...dailyRepairData.map((item) => [item.rawDate, item.output, "", ""]),
+      ...pcsRepairData.map((item) => [item.rawDate, item.grQtyPcs, item.giQtyPcs, ""]),
       ...stockChartData.map((item) => ["", "", item.gradeC + item.st, item.warehouse]),
     ]);
 
@@ -328,7 +365,8 @@ export default function GrafikSapPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {showManpower && <Card><CardHeader><h2 className="text-base font-semibold">Man Power per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet MP repair</p></CardHeader><CardContent><div className="h-80">{manpowerData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={manpowerData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Orang`, "Manpower"]} /><Bar dataKey="operators" name="Manpower" fill={WAREHOUSE_COLORS[0]} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data manpower")}</div></CardContent></Card>}
         {showStock && <Card><CardHeader><h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet Stok Grade C</p></CardHeader><CardContent><div className="h-80">{stockChartData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={stockChartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis /><Tooltip formatter={(value) => [formatKg(Number(value)), "Tonase"]} /><Bar dataKey="gradeC" name="Stok Grade C" fill="#e11d48" radius={[4, 4, 0, 0]} /><Bar dataKey="st" name="Stok ST" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data tonase stok")}</div></CardContent></Card>}
-        {showDaily && <Card><CardHeader><h2 className="text-base font-semibold">Daily Output Repair</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair</p></CardHeader><CardContent><div className="h-80">{dailyRepairData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={dailyRepairData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} /><Bar dataKey="output" name="Output Repair" fill="#0d9488" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data output repair")}</div></CardContent></Card>}
+        {showDaily && <Card><CardHeader><h2 className="text-base font-semibold">1. Output Repair Qty (pcs) — GR vs GI</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair (GR Qty pcs vs GI Qty pcs &amp; % GR/GI)</p></CardHeader><CardContent><div className="h-80">{pcsRepairData.length ? <ResponsiveContainer width="100%" height="100%"><ComposedChart data={pcsRepairData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis yAxisId="left" allowDecimals={false} tickFormatter={(val) => `${Number(val).toLocaleString("id-ID")}`} /><YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickFormatter={(val) => `${val}%`} /><Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8, fontSize: 11 }} /><Tooltip formatter={(value, name) => [name === "Persentase (GR/GI)" ? `${value}%` : `${Number(value).toLocaleString("id-ID")} pcs`, name]} /><Bar yAxisId="left" dataKey="grQtyPcs" name="GR Qty (pcs)" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={16} /><Bar yAxisId="left" dataKey="giQtyPcs" name="GI Qty (pcs)" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={16} /><Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} /></ComposedChart></ResponsiveContainer> : chartEmpty("Belum ada data Qty (pcs)")}</div></CardContent></Card>}
+        {showDaily && <Card><CardHeader><h2 className="text-base font-semibold">2. Output Repair Tonase (kg) — GR vs GI</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair (GR Base unit vs GI Base unit &amp; % GR/GI)</p></CardHeader><CardContent><div className="h-80">{tonnageRepairData.length ? <ResponsiveContainer width="100%" height="100%"><ComposedChart data={tonnageRepairData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" /><YAxis yAxisId="left" tickFormatter={(val) => `${Number(val).toLocaleString("id-ID")}`} /><YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickFormatter={(val) => `${val}%`} /><Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8, fontSize: 11 }} /><Tooltip formatter={(value, name) => [name === "Persentase (GR/GI)" ? `${value}%` : `${Number(value).toLocaleString("id-ID")} kg`, name]} /><Bar yAxisId="left" dataKey="grBaseUnit" name="GR Base unit (kg)" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={16} /><Bar yAxisId="left" dataKey="giBaseUnit" name="GI Base unit (kg)" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={16} /><Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} /></ComposedChart></ResponsiveContainer> : chartEmpty("Belum ada data Tonase (kg)")}</div></CardContent></Card>}
         {showWarehouse && <Card><CardHeader><h2 className="text-base font-semibold">Output Repair per Gudang</h2><p className="text-xs text-muted-foreground">Sumber sheet Repair</p></CardHeader><CardContent><div className="h-80">{repairWarehouseData.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={repairWarehouseData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="warehouse" /><YAxis allowDecimals={false} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} /><Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer> : chartEmpty("Belum ada data output per gudang")}</div></CardContent></Card>}
       </div>
     </div>

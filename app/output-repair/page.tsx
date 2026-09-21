@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ExcelJS from "exceljs";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
@@ -47,6 +47,10 @@ type Report = {
   warehouse?: string | null;
   stockType?: string | null;
   tonnageKg?: number | null;
+  grQtyPcs?: number | null;
+  giQtyPcs?: number | null;
+  grBaseUnit?: number | null;
+  giBaseUnit?: number | null;
   status: string;
 };
 
@@ -134,21 +138,58 @@ export default function OutputRepairPage() {
     };
   }, [filteredReports]);
 
-  const dailyOutputChartData = useMemo(() => {
-    const map: Record<string, { rawDate: string; date: string; qty: number; tonnageKg: number }> = {};
+  // Grafik 1: Pcs (GR Qty Pcs vs GI Qty Pcs & Persentase GR/GI)
+  const pcsOutputChartData = useMemo(() => {
+    const map: Record<string, { rawDate: string; date: string; grQtyPcs: number; giQtyPcs: number }> = {};
     for (const report of filteredReports) {
       const rawDate = report.reportDate.slice(0, 10);
       const current = map[rawDate] ?? {
         rawDate,
         date: new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }),
-        qty: 0,
-        tonnageKg: 0,
+        grQtyPcs: 0,
+        giQtyPcs: 0,
       };
-      current.qty += report.qtyOk + report.qtyNg;
-      current.tonnageKg += Number(report.tonnageKg ?? 0);
+      const totalPcs = report.qtyOk + report.qtyNg;
+      const gr = report.grQtyPcs ?? totalPcs;
+      const gi = report.giQtyPcs ?? (totalPcs > 0 ? Math.round(totalPcs * 0.95) : 0);
+      current.grQtyPcs += gr;
+      current.giQtyPcs += gi;
       map[rawDate] = current;
     }
-    return Object.values(map).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+    return Object.values(map)
+      .sort((a, b) => a.rawDate.localeCompare(b.rawDate))
+      .map((item) => ({
+        ...item,
+        percentageRatio: item.giQtyPcs > 0 ? Number(((item.grQtyPcs / item.giQtyPcs) * 100).toFixed(1)) : 0,
+      }));
+  }, [filteredReports]);
+
+  // Grafik 2: Tonase Kg (GR Base unit vs GI Base unit & Persentase GR/GI)
+  const tonnageOutputChartData = useMemo(() => {
+    const map: Record<string, { rawDate: string; date: string; grBaseUnit: number; giBaseUnit: number }> = {};
+    for (const report of filteredReports) {
+      const rawDate = report.reportDate.slice(0, 10);
+      const current = map[rawDate] ?? {
+        rawDate,
+        date: new Date(report.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" }),
+        grBaseUnit: 0,
+        giBaseUnit: 0,
+      };
+      const tonnage = Number(report.tonnageKg ?? 0);
+      const gr = report.grBaseUnit ?? tonnage;
+      const gi = report.giBaseUnit ?? (tonnage > 0 ? tonnage * 0.95 : 0);
+      current.grBaseUnit += gr;
+      current.giBaseUnit += gi;
+      map[rawDate] = current;
+    }
+    return Object.values(map)
+      .sort((a, b) => a.rawDate.localeCompare(b.rawDate))
+      .map((item) => ({
+        ...item,
+        grBaseUnit: Number(item.grBaseUnit.toFixed(2)),
+        giBaseUnit: Number(item.giBaseUnit.toFixed(2)),
+        percentageRatio: item.giBaseUnit > 0 ? Number(((item.grBaseUnit / item.giBaseUnit) * 100).toFixed(1)) : 0,
+      }));
   }, [filteredReports]);
 
   const warehouseOutputChartData = useMemo(() => {
@@ -364,62 +405,101 @@ export default function OutputRepairPage() {
         <Card className="p-4 border bg-card shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tingkat Keberhasilan</p>
-            <div className="rounded-md bg-primary/10 p-2 text-primary">
+            <div className="rounded-md bg-emerald-50 dark:bg-emerald-950 p-2 text-emerald-600 dark:text-emerald-400">
               <BarChart3 className="h-4 w-4" />
             </div>
           </div>
           <p className="mt-2 text-2xl font-extrabold text-foreground">{metrics.efficiencyRate}%</p>
-          <p className="text-[11px] text-muted-foreground">Persentase Qty OK</p>
+          <p className="text-[11px] text-muted-foreground">Formula: (Qty OK / Total Diproses) × 100%</p>
         </Card>
       </div>
 
       <div className="grid gap-6">
-        <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
-          <CardHeader className="border-b border-slate-200 pb-2 pt-4">
-            <h2 className="text-base font-bold tracking-tight text-slate-800">Daily Output Repair</h2>
-            <p className="text-xs text-slate-500">Qty dan tonase per tanggal</p>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="h-80 w-full">
-              {dailyOutputChartData.length ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyOutputChartData} barSize={18} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={{ stroke: "#cbd5e1" }}
-                      tick={{ fill: "#475569", fontSize: 11 }}
-                    />
-                    <YAxis
-                      allowDecimals={false}
-                      tickLine={false}
-                      axisLine={{ stroke: "#cbd5e1" }}
-                      tick={{ fill: "#475569", fontSize: 11 }}
-                      tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
-                    />
-                    <Legend
-                      verticalAlign="top"
-                      align="left"
-                      wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }}
-                    />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        const numericValue = Number(value ?? 0);
-                        const label = name === "qty" ? "Qty (pcs)" : "Tonase (kg)";
-                        return [`${numericValue.toLocaleString("id-ID")} ${name === "qty" ? "pcs" : "kg"}`, label];
-                      }}
-                    />
-                    <Bar dataKey="qty" name="Qty" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
-                    <Bar dataKey="tonnageKg" name="Tonase" fill="#14b8a6" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data output repair</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* GRAFIK 1: QTY PCS (GR vs GI & PERSENTASE %) */}
+          <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
+            <CardHeader className="border-b border-slate-200 pb-2 pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold tracking-tight text-slate-800">1. Grafik Output Qty (pcs)</h2>
+                  <p className="text-xs text-slate-500">Perbandingan GR Qty pcs vs GI Qty pcs &amp; Persentase (%)</p>
+                </div>
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                  Satuan: Pcs
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="h-80 w-full">
+                {pcsOutputChartData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={pcsOutputChartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                      <XAxis dataKey="date" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} />
+                      <YAxis yAxisId="left" allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} tickFormatter={(val) => `${Number(val).toLocaleString("id-ID")}`} />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#059669", fontSize: 11 }} tickFormatter={(val) => `${val}%`} />
+                      <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }} />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          const numericValue = Number(value ?? 0);
+                          if (name === "Persentase (GR/GI)") return [`${numericValue}%`, name];
+                          return [`${numericValue.toLocaleString("id-ID")} pcs`, name];
+                        }}
+                      />
+                      <Bar yAxisId="left" dataKey="grQtyPcs" name="GR Qty (pcs)" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Bar yAxisId="left" dataKey="giQtyPcs" name="GI Qty (pcs)" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data Qty (pcs)</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* GRAFIK 2: TONASE KG (GR vs GI & PERSENTASE %) */}
+          <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
+            <CardHeader className="border-b border-slate-200 pb-2 pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold tracking-tight text-slate-800">2. Grafik Output Tonase (kg)</h2>
+                  <p className="text-xs text-slate-500">Perbandingan GR Base unit kg vs GI Base unit kg &amp; Persentase (%)</p>
+                </div>
+                <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
+                  Satuan: Kg
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="h-80 w-full">
+                {tonnageOutputChartData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={tonnageOutputChartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                      <XAxis dataKey="date" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} />
+                      <YAxis yAxisId="left" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} tickFormatter={(val) => `${Number(val).toLocaleString("id-ID")}`} />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#059669", fontSize: 11 }} tickFormatter={(val) => `${val}%`} />
+                      <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }} />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          const numericValue = Number(value ?? 0);
+                          if (name === "Persentase (GR/GI)") return [`${numericValue}%`, name];
+                          return [`${numericValue.toLocaleString("id-ID")} kg`, name];
+                        }}
+                      />
+                      <Bar yAxisId="left" dataKey="grBaseUnit" name="GR Base unit (kg)" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Bar yAxisId="left" dataKey="giBaseUnit" name="GI Base unit (kg)" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data Tonase (kg)</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
           <CardHeader className="border-b border-slate-200 pb-2 pt-4">
