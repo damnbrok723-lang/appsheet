@@ -255,15 +255,15 @@ export default function ReportsPage() {
         image.onload = () => resolve();
         image.onerror = () => reject(new Error("Foto tidak dapat dibaca"));
       });
-      const maxDimension = 1600;
+      const maxDimension = 1280;
       const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, Math.round(image.width * scale));
       canvas.height = Math.max(1, Math.round(image.height * scale));
       canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
-      const compressed = canvas.toDataURL("image/jpeg", 0.78);
-      if (compressed.length > 4_000_000) {
-        toast.error("Foto masih terlalu besar setelah dikompres");
+      const compressed = canvas.toDataURL("image/jpeg", 0.65);
+      if (compressed.length > 1_800_000) {
+        toast.error("Foto masih terlalu besar. Gunakan foto dengan ukuran lebih kecil");
         return;
       }
       setForm((current) => ({ ...current, photoData: compressed }));
