@@ -369,37 +369,37 @@ export default function OutputRepairPage() {
 
       {/* METRIC CARDS */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="border border-red-200 bg-red-50/70 p-4 shadow-xs dark:border-red-900/70 dark:bg-red-950/30">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-300">Total Tonase GR</p>
-            <div className="rounded-md bg-red-100 p-2 text-red-600 dark:bg-red-900/60 dark:text-red-300">
+        <Card className="h-full rounded-[20px] border-[2px] border-[#e59a96] bg-[#e9d0ce] p-4 shadow-none">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#d85d5d]">Total Tonase GR</p>
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#d95d5d] text-white shadow-sm">
               <XCircle className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-red-700 dark:text-red-300">{Number(metrics.totalGr).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</p>
-          <p className="text-[11px] text-red-700/80 dark:text-red-300/80">Total tonase pipa GR</p>
+          <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#d95d5d]">{Number(metrics.totalGr).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
+          <p className="mt-3 text-[11px] text-[#bf4f4d]">Total tonase pipa GR</p>
         </Card>
 
-        <Card className="border border-blue-200 bg-blue-50/70 p-4 shadow-xs dark:border-blue-900/70 dark:bg-blue-950/30">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">Total Tonase GI</p>
-            <div className="rounded-md bg-blue-100 p-2 text-blue-600 dark:bg-blue-900/60 dark:text-blue-300">
+        <Card className="h-full rounded-[20px] border-[2px] border-[#8eb4de] bg-[#cfdeee] p-4 shadow-none">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#2a78c9]">Total Tonase GI</p>
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#2a78c9] text-white shadow-sm">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-blue-700 dark:text-blue-300">{Number(metrics.totalGi).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</p>
-          <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80">Total tonase pipa GI</p>
+          <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#2a78c9]">{Number(metrics.totalGi).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="mt-3 text-[11px] text-[#2a6bb0]">Total tonase pipa GI</p>
         </Card>
 
-        <Card className="border border-orange-200 bg-orange-50/70 p-4 shadow-xs dark:border-orange-900/70 dark:bg-orange-950/30">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-300">Tingkat Keberhasilan GR terhadap GI</p>
-            <div className="rounded-md bg-orange-100 p-2 text-orange-600 dark:bg-orange-900/60 dark:text-orange-300">
+        <Card className="h-full rounded-[20px] border-[2px] border-[#d3b394] bg-[#d9c5b0] p-4 shadow-none">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#be7a2b]">Tingkat Keberhasilan GR terhadap GI</p>
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#b87a42] text-white shadow-sm">
               <BarChart3 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-orange-700 dark:text-orange-300">{metrics.grVsGiRate}%</p>
-          <p className="text-[11px] text-orange-700/80 dark:text-orange-300/80">Formula: (GR / GI) × 100%</p>
+          <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#be7a2b]">{metrics.grVsGiRate}%</p>
+          <p className="mt-3 text-[11px] text-[#a96a25]">Formula: (GR / GI) × 100%</p>
         </Card>
       </div>
 
