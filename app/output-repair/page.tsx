@@ -406,14 +406,14 @@ export default function OutputRepairPage() {
       <div className="grid gap-6">
         <div className="grid gap-6">
           {/* GRAFIK 1: QTY PCS (GR vs GI & PERSENTASE %) */}
-          <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
-            <CardHeader className="border-b border-slate-200 pb-2 pt-4">
+          <Card className="border border-red-200 bg-white shadow-none">
+            <CardHeader className="border-b border-red-100 pb-2 pt-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-bold tracking-tight text-slate-800">1. Grafik Output Qty (pcs)</h2>
                   <p className="text-xs text-slate-500">Perbandingan GR Qty pcs vs GI Qty pcs &amp; Persentase (%)</p>
                 </div>
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
                   Satuan: Pcs
                 </span>
               </div>
@@ -423,10 +423,10 @@ export default function OutputRepairPage() {
                 {pcsOutputChartData.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={pcsOutputChartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="date" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} />
                       <YAxis yAxisId="left" allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} tickFormatter={(val) => `${Number(val).toLocaleString("id-ID")}`} />
-                      <YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#059669", fontSize: 11 }} tickFormatter={(val) => `${val}%`} />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#f59e0b", fontSize: 11 }} tickFormatter={(val) => `${val}%`} />
                       <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }} />
                       <Tooltip
                         formatter={(value, name) => {
@@ -435,9 +435,9 @@ export default function OutputRepairPage() {
                           return [`${numericValue.toLocaleString("id-ID")} pcs`, name];
                         }}
                       />
-                      <Bar yAxisId="left" dataKey="grQtyPcs" name="GR Qty (pcs)" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={16} />
-                      <Bar yAxisId="left" dataKey="giQtyPcs" name="GI Qty (pcs)" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={16} />
-                      <Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                      <Bar yAxisId="left" dataKey="grQtyPcs" name="GR Qty (pcs)" fill="#dc2626" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Bar yAxisId="left" dataKey="giQtyPcs" name="GI Qty (pcs)" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 ) : (
@@ -448,14 +448,14 @@ export default function OutputRepairPage() {
           </Card>
 
           {/* GRAFIK 2: TONASE KG (GR vs GI & PERSENTASE %) */}
-          <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
-            <CardHeader className="border-b border-slate-200 pb-2 pt-4">
+          <Card className="border border-blue-200 bg-white shadow-none">
+            <CardHeader className="border-b border-blue-100 pb-2 pt-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-bold tracking-tight text-slate-800">2. Grafik Output Tonase (kg)</h2>
                   <p className="text-xs text-slate-500">Perbandingan GR Base unit kg vs GI Base unit kg &amp; Persentase (%)</p>
                 </div>
-                <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                   Satuan: Kg
                 </span>
               </div>
@@ -465,10 +465,10 @@ export default function OutputRepairPage() {
                 {tonnageOutputChartData.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={tonnageOutputChartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="date" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} />
                       <YAxis yAxisId="left" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#475569", fontSize: 11 }} tickFormatter={(val) => `${Number(val).toLocaleString("id-ID")}`} />
-                      <YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#059669", fontSize: 11 }} tickFormatter={(val) => `${val}%`} />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 150]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tick={{ fill: "#f59e0b", fontSize: 11 }} tickFormatter={(val) => `${val}%`} />
                       <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }} />
                       <Tooltip
                         formatter={(value, name) => {
@@ -477,9 +477,9 @@ export default function OutputRepairPage() {
                           return [`${numericValue.toLocaleString("id-ID")} kg`, name];
                         }}
                       />
-                      <Bar yAxisId="left" dataKey="grBaseUnit" name="GR Base unit (kg)" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={16} />
-                      <Bar yAxisId="left" dataKey="giBaseUnit" name="GI Base unit (kg)" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={16} />
-                      <Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                      <Bar yAxisId="left" dataKey="grBaseUnit" name="GR Base unit (kg)" fill="#dc2626" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Bar yAxisId="left" dataKey="giBaseUnit" name="GI Base unit (kg)" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={16} />
+                      <Line yAxisId="right" type="monotone" dataKey="percentageRatio" name="Persentase (GR/GI)" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 ) : (
@@ -490,7 +490,7 @@ export default function OutputRepairPage() {
           </Card>
         </div>
 
-        <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
+        <Card className="border border-slate-200 bg-white shadow-none">
           <CardHeader className="border-b border-slate-200 pb-2 pt-4">
             <h2 className="text-base font-bold tracking-tight text-slate-800">Output Repair per Gudang</h2>
             <p className="text-xs text-slate-500">Total Qty OK + Qty NG berdasarkan gudang</p>
@@ -500,7 +500,7 @@ export default function OutputRepairPage() {
               {warehouseOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={warehouseOutputChartData} barSize={28} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#dfe7f0" />
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
                     <XAxis
                       dataKey="warehouse"
                       tickLine={false}
