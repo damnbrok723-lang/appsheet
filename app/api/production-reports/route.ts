@@ -261,13 +261,17 @@ async function importReports(request: Request, userId: string, storedImport?: { 
   return Response.json({ success: true, data: { imported: reports.length } }, { status: 201 });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSession();
   if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
   const role = (session.user as { role?: string }).role;
+  const sourceTypes = new URL(request.url).searchParams.get("sourceTypes")?.split(",").map((value) => value.trim()).filter(Boolean);
   const reports = await prisma.productionReport.findMany({
-    where: role === "ADMIN" || role === "MANAGER" ? undefined : { userId: session.user.id as string },
+    where: {
+      ...(role === "ADMIN" || role === "MANAGER" ? {} : { userId: session.user.id as string }),
+      ...(sourceTypes?.length ? { sourceType: { in: sourceTypes } } : {}),
+    },
     select: {
       id: true,
       userId: true,

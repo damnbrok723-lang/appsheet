@@ -146,7 +146,7 @@ export default function StokNcrPage() {
   const reportsQuery = useQuery({
     queryKey: ["production-reports"],
     queryFn: async () => {
-      const res = await fetch("/api/production-reports");
+      const res = await fetch("/api/production-reports?sourceTypes=MANUAL,STOCK");
       if (!res.ok) throw new Error("Gagal memuat data NCR");
       return (await res.json()).data.reports as Report[];
     },

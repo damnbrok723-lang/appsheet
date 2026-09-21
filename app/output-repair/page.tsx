@@ -85,7 +85,7 @@ export default function OutputRepairPage() {
   const reportsQuery = useQuery({
     queryKey: ["output-repair-reports"],
     queryFn: async () => {
-      const res = await fetch("/api/production-reports");
+      const res = await fetch("/api/production-reports?sourceTypes=MANUAL,OUTPUT_REPAIR");
       if (!res.ok) throw new Error("Gagal memuat data output repair");
       return (await res.json()).data.reports as Report[];
     },
