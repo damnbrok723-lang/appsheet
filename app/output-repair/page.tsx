@@ -89,7 +89,8 @@ export default function OutputRepairPage() {
       if (!res.ok) throw new Error("Gagal memuat data output repair");
       return (await res.json()).data.reports as Report[];
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const filteredReports = useMemo(() => {

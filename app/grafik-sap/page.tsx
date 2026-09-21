@@ -70,7 +70,8 @@ export default function GrafikSapPage() {
       if (!response.ok) throw new Error("Gagal memuat data SAP");
       return (await response.json()).data.reports as Report[];
     },
-    staleTime: 30_000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const monitoringQuery = useQuery({

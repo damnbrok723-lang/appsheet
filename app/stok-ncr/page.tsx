@@ -150,9 +150,8 @@ export default function StokNcrPage() {
       if (!res.ok) throw new Error("Gagal memuat data NCR");
       return (await res.json()).data.reports as Report[];
     },
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Filter khusus data yang memiliki stok NCR / Qty NG > 0
