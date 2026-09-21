@@ -31,7 +31,14 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             "${{ vars.SUPABASE_URL }}/rest/v1/" > /dev/null && echo "OK - Supabase awake!" || echo "Supabase ping partial (normal)"
 
+      - name: 🧹 Auto-purge data > 6 bulan (Cegah DB Full)
+        run: |
+          echo "Menjalankan pembersihan data tua > 180 hari..."
+          CLEANUP_RESP=$(curl -fsS --max-time 30 "${{ vars.APP_URL }}/api/cron/cleanup?secret=keepalive-clean-secret" 2>&1) || echo "Cleanup skipped/failed (normal jika first run)"
+          echo "Hasil Cleanup: $CLEANUP_RESP"
+
       - name: 📊 Log selesai
         if: always()
         run: |
-          echo "Keep-alive selesai: $(date -u)"
+          echo "Keep-alive & Cleanup selesai: $(date -u)"
+
