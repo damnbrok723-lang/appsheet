@@ -120,21 +120,21 @@ export default function OutputRepairPage() {
   }, [reportsQuery.data, filterFrom, filterTo, shiftFilter, stockTypeFilter, searchTerm]);
 
   const metrics = useMemo(() => {
-    let totalOk = 0;
-    let totalNg = 0;
+    let totalGr = 0;
+    let totalGi = 0;
     for (const r of filteredReports) {
-      totalOk += r.qtyOk;
-      totalNg += r.qtyNg;
+      const tonnage = Number(r.tonnageKg ?? 0);
+      totalGr += Number(r.grBaseUnit ?? tonnage);
+      totalGi += Number(r.giBaseUnit ?? (tonnage > 0 ? tonnage * 0.95 : 0));
     }
-    const totalPcs = totalOk + totalNg;
-    const efficiencyRate = totalPcs > 0 ? ((totalOk / totalPcs) * 100).toFixed(1) : "0.0";
+
+    const grVsGiRate = totalGi > 0 ? ((totalGr / totalGi) * 100).toFixed(1) : totalGr > 0 ? "100.0" : "0.0";
 
     return {
-      totalOk,
-      totalNg,
-      totalPcs,
+      totalGr,
+      totalGi,
+      grVsGiRate,
       totalBatches: filteredReports.length,
-      efficiencyRate,
     };
   }, [filteredReports]);
 
@@ -368,54 +368,43 @@ export default function OutputRepairPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4 border bg-card shadow-xs">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border border-red-200 bg-red-50/70 p-4 shadow-xs dark:border-red-900/70 dark:bg-red-950/30">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Qty OK</p>
-            <div className="rounded-md bg-emerald-50 dark:bg-emerald-950 p-2 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{metrics.totalOk.toLocaleString("id-ID")}</p>
-          <p className="text-[11px] text-muted-foreground">Batang pipa lolos perbaikan</p>
-        </Card>
-
-        <Card className="p-4 border bg-card shadow-xs">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Qty NG / NCR</p>
-            <div className="rounded-md bg-rose-50 dark:bg-rose-950 p-2 text-rose-600 dark:text-rose-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-300">Total Tonase GR</p>
+            <div className="rounded-md bg-red-100 p-2 text-red-600 dark:bg-red-900/60 dark:text-red-300">
               <XCircle className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-rose-600 dark:text-rose-400">{metrics.totalNg.toLocaleString("id-ID")}</p>
-          <p className="text-[11px] text-muted-foreground">Batang pipa tidak lolos (defect)</p>
+          <p className="mt-2 text-2xl font-extrabold text-red-700 dark:text-red-300">{Number(metrics.totalGr).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</p>
+          <p className="text-[11px] text-red-700/80 dark:text-red-300/80">Total tonase pipa GR</p>
         </Card>
 
-        <Card className="p-4 border bg-card shadow-xs">
+        <Card className="border border-blue-200 bg-blue-50/70 p-4 shadow-xs dark:border-blue-900/70 dark:bg-blue-950/30">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Processed</p>
-            <div className="rounded-md bg-primary/10 p-2 text-primary">
-              <Layers className="h-4 w-4" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">Total Tonase GI</p>
+            <div className="rounded-md bg-blue-100 p-2 text-blue-600 dark:bg-blue-900/60 dark:text-blue-300">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-foreground">{metrics.totalPcs.toLocaleString("id-ID")}</p>
-          <p className="text-[11px] text-muted-foreground">Total batang pipa diproses</p>
+          <p className="mt-2 text-2xl font-extrabold text-blue-700 dark:text-blue-300">{Number(metrics.totalGi).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</p>
+          <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80">Total tonase pipa GI</p>
         </Card>
 
-        <Card className="p-4 border bg-card shadow-xs">
+        <Card className="border border-orange-200 bg-orange-50/70 p-4 shadow-xs dark:border-orange-900/70 dark:bg-orange-950/30">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tingkat Keberhasilan</p>
-            <div className="rounded-md bg-emerald-50 dark:bg-emerald-950 p-2 text-emerald-600 dark:text-emerald-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-300">Tingkat Keberhasilan GR terhadap GI</p>
+            <div className="rounded-md bg-orange-100 p-2 text-orange-600 dark:bg-orange-900/60 dark:text-orange-300">
               <BarChart3 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-foreground">{metrics.efficiencyRate}%</p>
-          <p className="text-[11px] text-muted-foreground">Formula: (Qty OK / Total Diproses) × 100%</p>
+          <p className="mt-2 text-2xl font-extrabold text-orange-700 dark:text-orange-300">{metrics.grVsGiRate}%</p>
+          <p className="text-[11px] text-orange-700/80 dark:text-orange-300/80">Formula: (GR / GI) × 100%</p>
         </Card>
       </div>
 
       <div className="grid gap-6">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6">
           {/* GRAFIK 1: QTY PCS (GR vs GI & PERSENTASE %) */}
           <Card className="border border-slate-200 bg-slate-50/40 shadow-none">
             <CardHeader className="border-b border-slate-200 pb-2 pt-4">
