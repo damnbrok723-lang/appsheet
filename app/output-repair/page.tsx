@@ -15,13 +15,10 @@ import {
   Upload,
   Search,
   RefreshCw,
-  Layers,
   ChevronLeft,
   ChevronRight,
-  Plus,
   FileSpreadsheet,
 } from "lucide-react";
-import Link from "next/link";
 import ExcelJS from "exceljs";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
@@ -333,14 +330,6 @@ export default function OutputRepairPage() {
             <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
             Template Kosong
           </a>
-          <a
-            href="/Control Daily Repair by SAP.xlsx"
-            download
-            className="inline-flex h-9 w-full items-center justify-center rounded-md border bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground sm:w-auto"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
-            File SAP Asli
-          </a>
           <Button
             type="button"
             variant="default"
@@ -358,12 +347,6 @@ export default function OutputRepairPage() {
             Export Excel
           </Button>
 
-          <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
-            <Link href="/reports">
-              <Plus className="mr-1.5 h-4 w-4" />
-              Input Laporan Baru
-            </Link>
-          </Button>
         </div>
       </div>
 
