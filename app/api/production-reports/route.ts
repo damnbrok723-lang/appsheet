@@ -21,6 +21,10 @@ const reportSchema = z.object({
   sourceType: z.enum(["MANUAL", "STOCK", "OUTPUT_REPAIR"]).optional(),
   warehouse: z.string().trim().max(80).optional(),
   tonnageKg: z.coerce.number().min(0).optional(),
+  grQtyPcs: z.coerce.number().int().min(0).optional(),
+  giQtyPcs: z.coerce.number().int().min(0).optional(),
+  grBaseUnit: z.coerce.number().min(0).optional(),
+  giBaseUnit: z.coerce.number().min(0).optional(),
   stockGrade: z.string().trim().max(80).optional(),
   stockType: z.string().trim().max(40).optional(),
   photoData: z.string().max(14_000_000, "Ukuran foto terlalu besar").optional(),
@@ -173,6 +177,10 @@ async function importReports(request: Request, userId: string, storedImport?: { 
       const sourceType = isStockImport ? "STOCK" : isRepairImport ? "OUTPUT_REPAIR" : "MANUAL";
       const warehouse = warehouseValue(normalized.gudang || normalized.sloc);
       const tonnageKg = numberValue(normalized.tonasekg || normalized.unrestrictedkg);
+      const grQtyPcs = Math.max(0, Math.round(numberValue(normalized.grqtypcs || normalized.grqty)));
+      const giQtyPcs = Math.max(0, Math.round(numberValue(normalized.giqtypcs || normalized.giqty)));
+      const grBaseUnit = Math.abs(numberValue(normalized.grbaseunit || normalized.grtonase || normalized.grkg));
+      const giBaseUnit = Math.abs(numberValue(normalized.gibaseunit || normalized.gitonase || normalized.gikg));
       const stockGrade = textValue(normalized.grade) || undefined;
       const stockType = textValue(normalized.stlt) || undefined;
       
@@ -214,6 +222,10 @@ async function importReports(request: Request, userId: string, storedImport?: { 
         sourceType,
         warehouse,
         tonnageKg: tonnageKg || undefined,
+        grQtyPcs: grQtyPcs || undefined,
+        giQtyPcs: giQtyPcs || undefined,
+        grBaseUnit: grBaseUnit || undefined,
+        giBaseUnit: giBaseUnit || undefined,
         stockGrade,
         stockType,
       };
