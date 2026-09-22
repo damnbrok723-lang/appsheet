@@ -99,6 +99,10 @@ async function syncProductionRows(rows: ProductionImportRow[], userId: string, s
       sourceType: row.sourceType,
       warehouse: row.warehouse,
       tonnageKg: row.tonnageKg,
+      grQtyPcs: row.grQtyPcs,
+      giQtyPcs: row.giQtyPcs,
+      grBaseUnit: row.grBaseUnit,
+      giBaseUnit: row.giBaseUnit,
       stockGrade: row.stockGrade,
       stockType: row.stockType,
       status: row.status,
@@ -215,6 +219,8 @@ export async function POST(request: Request) {
 
         const grQtyPcsRaw = Math.abs(numberValue(row.grqtypcs || row.grqty));
         const giQtyPcsRaw = Math.abs(numberValue(row.giqtypcs || row.giqty));
+        const grBaseUnitRaw = Math.abs(numberValue(row.grbaseunit || row.grtonase || row.grkg));
+        const giBaseUnitRaw = Math.abs(numberValue(row.gibaseunit || row.gitonase || row.gikg));
         const mvt = textValue(row.mvt).toUpperCase();
         const isGI = mvt.includes("GI") || ["102", "261", "562", "502", "201"].includes(mvt);
         const isGR = mvt.includes("GR") || ["101", "262", "561", "501", "309"].includes(mvt);
@@ -224,6 +230,10 @@ export async function POST(request: Request) {
 
         const grQtyPcs = hasGRField ? grQtyPcsRaw : isGI ? 0 : qtyPcs;
         const giQtyPcs = hasGIField ? giQtyPcsRaw : isGR ? 0 : isGI ? qtyPcs : Math.round(qtyPcs * 0.95);
+        const hasGRBaseField = "grbaseunit" in row || "grtonase" in row || "grkg" in row;
+        const hasGIBaseField = "gibaseunit" in row || "gitonase" in row || "gikg" in row;
+        const grBaseUnit = hasGRBaseField ? grBaseUnitRaw : isGI ? 0 : tonnage;
+        const giBaseUnit = hasGIBaseField ? giBaseUnitRaw : isGR ? 0 : isGI ? tonnage : tonnage * 0.95;
 
         return {
           sourceKey: stableKey(["REPAIR", row.order, row.materialdoc, row.batch, row.mvt, row.postdate, row.sloc]),
@@ -245,6 +255,8 @@ export async function POST(request: Request) {
           tonnageKg: tonnage,
           grQtyPcs,
           giQtyPcs,
+          grBaseUnit,
+          giBaseUnit,
           stockGrade: null,
           stockType: textValue(row.stlt) || null,
           status: "DRAFT",

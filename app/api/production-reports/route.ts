@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/permissions";
-import type { ProductionReport } from "@prisma/client";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import { downloadStorageFile } from "@/lib/storage";
@@ -291,6 +290,10 @@ export async function GET(request: Request) {
       sourceType: true,
       warehouse: true,
       tonnageKg: true,
+      grQtyPcs: true,
+      giQtyPcs: true,
+      grBaseUnit: true,
+      giBaseUnit: true,
       stockGrade: true,
       stockType: true,
       photoData: true,
