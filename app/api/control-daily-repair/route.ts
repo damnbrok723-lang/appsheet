@@ -281,14 +281,19 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const session = await getSession();
   if (!session?.user?.id) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
   const userId = session.user.id as string;
+  const outputRepairOnly = new URL(request.url).searchParams.get("scope") === "output-repair";
   const [reports, monitoring] = await prisma.$transaction([
-    prisma.productionReport.deleteMany({ where: { userId, sourceType: { in: ["STOCK", "OUTPUT_REPAIR"] }, sourceKey: { not: null } } }),
-    prisma.monitoringEntry.deleteMany({ where: { userId, sourceKey: { not: null } } }),
+    prisma.productionReport.deleteMany({
+      where: { userId, sourceType: outputRepairOnly ? "OUTPUT_REPAIR" : { in: ["STOCK", "OUTPUT_REPAIR"] }, sourceKey: { not: null } },
+    }),
+    outputRepairOnly
+      ? prisma.monitoringEntry.deleteMany({ where: { id: "__output-repair-noop__" } })
+      : prisma.monitoringEntry.deleteMany({ where: { userId, sourceKey: { not: null } } }),
   ]);
 
   return Response.json({ success: true, data: { reportsDeleted: reports.count, monitoringDeleted: monitoring.count } });

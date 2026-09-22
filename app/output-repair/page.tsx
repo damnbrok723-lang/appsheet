@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
+  Trash2,
 } from "lucide-react";
 import ExcelJS from "exceljs";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -74,6 +75,7 @@ export default function OutputRepairPage() {
   const [stockTypeFilter, setStockTypeFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     function handleStorage(event: StorageEvent) {
@@ -300,6 +302,23 @@ export default function OutputRepairPage() {
     }
   }
 
+  async function deleteAllOutputRepair() {
+    if (!window.confirm("Hapus semua data Output Repair? Data Stok NCR, Monitoring, dan laporan manual tidak akan dihapus.")) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/control-daily-repair?scope=output-repair", { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || "Gagal menghapus data Output Repair");
+      await queryClient.invalidateQueries({ queryKey: ["output-repair-reports"] });
+      notifySapDataUpdated();
+      toast.success(`${result.data.reportsDeleted} data Output Repair berhasil dihapus`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus data Output Repair");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* HEADER SECTION */}
@@ -345,6 +364,11 @@ export default function OutputRepairPage() {
           <Button type="button" variant="outline" size="sm" onClick={exportExcel} disabled={!filteredReports.length} className="w-full sm:w-auto">
             <Download className="mr-1.5 h-4 w-4" />
             Export Excel
+          </Button>
+
+          <Button type="button" variant="outline" size="sm" onClick={deleteAllOutputRepair} disabled={isDeleting || !reportsQuery.data?.length} className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto">
+            <Trash2 className="mr-1.5 h-4 w-4" />
+            {isDeleting ? "Menghapus..." : "Hapus Semua Data"}
           </Button>
 
         </div>
