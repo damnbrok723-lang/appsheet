@@ -79,7 +79,31 @@ async function syncProductionRows(rows: ProductionImportRow[], userId: string, s
   const existingIds = existing.map((row) => row.id);
   const operations: Prisma.PrismaPromise<unknown>[] = [];
   if (existingIds.length) operations.push(prisma.productionReport.deleteMany({ where: { id: { in: existingIds } } }));
-  operations.push(prisma.productionReport.createMany({ data: unique.map((row) => ({ ...row, userId })) }));
+  operations.push(prisma.productionReport.createMany({
+    data: unique.map((row) => ({
+      userId,
+      sourceKey: row.sourceKey,
+      reportDate: row.reportDate,
+      customer: row.customer,
+      dimensions: row.dimensions,
+      pipeTypes: row.pipeTypes,
+      batchNumber: row.batchNumber,
+      ncrNumber: row.ncrNumber,
+      operatorTypes: row.operatorTypes,
+      operatorName: row.operatorName,
+      shift: row.shift,
+      qtyOk: row.qtyOk,
+      qtyNg: row.qtyNg,
+      ngNotes: row.ngNotes,
+      processNotes: row.processNotes,
+      sourceType: row.sourceType,
+      warehouse: row.warehouse,
+      tonnageKg: row.tonnageKg,
+      stockGrade: row.stockGrade,
+      stockType: row.stockType,
+      status: row.status,
+    })),
+  }));
   await prisma.$transaction(operations);
   return unique.length;
 }
