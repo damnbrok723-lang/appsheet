@@ -385,7 +385,6 @@ export default function OutputRepairPage() {
             </div>
           </div>
           <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#e63d3d]">{Number(metrics.totalGr).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
-          <p className="mt-3 text-[11px] text-[#c24f4f]"></p>
         </Card>
 
         <Card className="h-full rounded-[18px] border-[2px] border-[#5ea4ee] bg-[#dbeaf9] p-4 shadow-none">
@@ -396,7 +395,6 @@ export default function OutputRepairPage() {
             </div>
           </div>
           <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#2d7ddd]">{Number(metrics.totalGi).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="mt-3 text-[11px] text-[#2c6db3]"></p>
         </Card>
 
         <Card className="h-full rounded-[18px] border-[2px] border-[#d79d60] bg-[#e9d3bb] p-4 shadow-none">
@@ -407,7 +405,6 @@ export default function OutputRepairPage() {
             </div>
           </div>
           <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#d78d2b]">{metrics.grVsGiRate}%</p>
-          <p className="mt-3 text-[11px] text-[#b97b21]"></p>
         </Card>
       </div>
 
