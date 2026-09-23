@@ -21,7 +21,7 @@ import {
   Trash2,
 } from "lucide-react";
 import ExcelJS from "exceljs";
-import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
@@ -192,11 +192,12 @@ export default function OutputRepairPage() {
   }, [filteredReports]);
 
   const warehouseOutputChartData = useMemo(() => {
-    const map: Record<string, { warehouse: string; output: number }> = {};
+    const map: Record<string, { warehouse: string; output: number; tonnageKg: number }> = {};
     for (const report of filteredReports) {
       const warehouse = report.warehouse || "Tanpa Gudang";
-      const current = map[warehouse] ?? { warehouse, output: 0 };
+      const current = map[warehouse] ?? { warehouse, output: 0, tonnageKg: 0 };
       current.output += report.qtyOk + report.qtyNg;
+      current.tonnageKg += Number(report.tonnageKg ?? 0);
       map[warehouse] = current;
     }
     return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
@@ -500,13 +501,13 @@ export default function OutputRepairPage() {
         <Card className="border border-slate-200 bg-white shadow-none">
           <CardHeader className="border-b border-slate-200 pb-2 pt-4">
             <h2 className="text-base font-bold tracking-tight text-slate-800">Output Repair per Gudang</h2>
-            <p className="text-xs text-slate-500">Total Qty OK + Qty NG berdasarkan gudang</p>
+            <p className="text-xs text-slate-500">Total Qty dan tonase berdasarkan gudang</p>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="h-80 w-full">
               {warehouseOutputChartData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={warehouseOutputChartData} barSize={28} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
+                  <ComposedChart data={warehouseOutputChartData} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
                     <XAxis
                       dataKey="warehouse"
@@ -515,10 +516,19 @@ export default function OutputRepairPage() {
                       tick={{ fill: "#475569", fontSize: 11 }}
                     />
                     <YAxis
+                      yAxisId="qty"
                       allowDecimals={false}
                       tickLine={false}
                       axisLine={{ stroke: "#cbd5e1" }}
                       tick={{ fill: "#475569", fontSize: 11 }}
+                      tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
+                    />
+                    <YAxis
+                      yAxisId="tonnage"
+                      orientation="right"
+                      tickLine={false}
+                      axisLine={{ stroke: "#cbd5e1" }}
+                      tick={{ fill: "#0d9488", fontSize: 11 }}
                       tickFormatter={(value) => `${Number(value).toLocaleString("id-ID")}`}
                     />
                     <Legend
@@ -526,9 +536,13 @@ export default function OutputRepairPage() {
                       align="left"
                       wrapperStyle={{ paddingBottom: 8, fontSize: 11, color: "#475569" }}
                     />
-                    <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID")} Pcs`, "Output Repair"]} />
-                    <Bar dataKey="output" name="Output Repair" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
-                  </BarChart>
+                    <Tooltip formatter={(value, name) => [
+                      `${Number(value).toLocaleString("id-ID")} ${name === "Tonase (kg)" ? "kg" : "Pcs"}`,
+                      name,
+                    ]} />
+                    <Bar yAxisId="qty" dataKey="output" name="Output Repair (Pcs)" fill="#2563eb" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
+                    <Bar yAxisId="tonnage" dataKey="tonnageKg" name="Tonase (kg)" fill="#0d9488" radius={[4, 4, 0, 0]} fillOpacity={0.92} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data gudang output repair</div>
