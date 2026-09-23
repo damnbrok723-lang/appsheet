@@ -198,7 +198,7 @@ export async function POST(request: Request) {
         const qtyNg = Math.max(0, Math.round(numberValue(row.unrestrictedpcs)));
         return {
           sourceKey: stableKey(["STOCK", row.sloc, row.materialnumber, batch]),
-          reportDate: parseDateValue(row.requesteddelivdate),
+          reportDate: parseDateValue(row.postdate || row.requesteddelivdate),
           customer: textValue(row.customer) || "Customer Umum",
           dimensions: `${textValue(row.diammm || "-")} x ${textValue(row.tebal || "-")} x ${textValue(row.panjang || "-")}`,
           pipeTypes: JSON.stringify(["KOTAK"]),
