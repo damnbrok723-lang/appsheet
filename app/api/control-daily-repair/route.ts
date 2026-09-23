@@ -19,7 +19,18 @@ function normalizeHeader(value: string) {
 
 function numberValue(value: unknown) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  const normalized = textValue(value).replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+  const raw = textValue(value).replace(/\s/g, "");
+  const hasComma = raw.includes(",");
+  const hasDot = raw.includes(".");
+  const normalized = hasComma && hasDot
+    ? raw.lastIndexOf(",") > raw.lastIndexOf(".")
+      ? raw.replace(/\./g, "").replace(",", ".")
+      : raw.replace(/,/g, "")
+    : hasComma
+      ? /^-?\d{1,3}(,\d{3})+$/.test(raw) ? raw.replace(/,/g, "") : raw.replace(",", ".")
+      : hasDot
+        ? /^-?\d{1,3}(\.\d{3})+$/.test(raw) ? raw.replace(/\./g, "") : raw
+        : raw;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
 }
