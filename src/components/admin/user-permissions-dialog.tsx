@@ -35,6 +35,7 @@ const PERMISSION_LABELS: Record<CardId, string> = {
   grafik_sap_export: "Tombol Export SAP",
   grafik_sap_delete: "Tombol Hapus Data SAP",
   nav_dashboard: "Menu Dashboard",
+  nav_monitoring: "Menu Monitoring",
   nav_grafik_sap: "Menu Grafik SAP",
   nav_stok_ncr: "Menu Stok NCR",
   nav_repair: "Menu Output Repair",

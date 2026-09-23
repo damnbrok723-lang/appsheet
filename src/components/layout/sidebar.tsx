@@ -35,7 +35,7 @@ const menuItems: { name: string; href: string; icon: LucideIcon; permission: Car
   { name: "Stok NCR", href: "/stok-ncr", icon: ClipboardList, permission: "nav_stok_ncr" },
   { name: "Output Repair", href: "/output-repair", icon: Wrench, permission: "nav_repair" },
   { name: "Laporan", href: "/reports", icon: FileBarChart, permission: "nav_laporan" },
-  { name: "Monitoring", href: "/monitoring", icon: Activity, permission: "nav_dashboard" },
+  { name: "Monitoring", href: "/monitoring", icon: Activity, permission: "nav_monitoring" },
 ];
 
 export function Sidebar() {

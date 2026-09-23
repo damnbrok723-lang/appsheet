@@ -20,6 +20,7 @@ export type CardId =
   | "grafik_sap_export"
   | "grafik_sap_delete"
   | "nav_dashboard"
+  | "nav_monitoring"
   | "nav_grafik_sap"
   | "nav_stok_ncr"
   | "nav_repair"
@@ -46,6 +47,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "grafik_sap_export",
     "grafik_sap_delete",
     "nav_dashboard",
+    "nav_monitoring",
     "nav_grafik_sap",
     "nav_stok_ncr",
     "nav_repair",
@@ -68,6 +70,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "grafik_sap_import",
     "grafik_sap_export",
     "nav_dashboard",
+    "nav_monitoring",
     "nav_grafik_sap",
     "nav_stok_ncr",
     "nav_repair",
@@ -85,6 +88,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, CardId[]> = {
     "grafik_sap_warehouse",
     "grafik_sap_import",
     "nav_dashboard",
+    "nav_monitoring",
     "nav_grafik_sap",
     "nav_stok_ncr",
     "nav_repair",
