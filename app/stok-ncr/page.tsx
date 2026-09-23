@@ -73,6 +73,7 @@ export default function StokNcrPage() {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [stockChartType, setStockChartType] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; ncr: string; batch: string } | null>(null);
@@ -225,7 +226,7 @@ export default function StokNcrPage() {
 
   const stockWarehouseChartData = useMemo(() => {
     const map: Record<string, { warehouse: string; gradeC: number; st: number }> = {};
-    for (const report of filteredReports) {
+    for (const report of filteredReports.filter((report) => stockChartType === "ALL" || (report.stockType ?? "").toUpperCase() === stockChartType)) {
       const warehouse = report.warehouse || "Tanpa Gudang";
       const current = map[warehouse] ?? { warehouse, gradeC: 0, st: 0 };
       const tonnageKg = report.tonnageKg ?? 0;
@@ -234,7 +235,7 @@ export default function StokNcrPage() {
       map[warehouse] = current;
     }
     return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
-  }, [filteredReports]);
+  }, [filteredReports, stockChartType]);
 
   const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
   const paginatedReports = useMemo(() => {
@@ -459,8 +460,19 @@ export default function StokNcrPage() {
 
         <Card>
           <CardHeader>
-            <h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2>
-            <p className="text-xs text-muted-foreground">Sumber: sheet Stok Grade C, satuan kilogram</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2>
+              <select
+                value={stockChartType}
+                onChange={(event) => setStockChartType(event.target.value)}
+                className="h-9 rounded-md border bg-background px-3 text-sm"
+                aria-label="Filter grafik stok berdasarkan ST atau LT"
+              >
+                <option value="ALL">Semua ST/LT</option>
+                <option value="ST">ST</option>
+                <option value="LT">LT</option>
+              </select>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-80 w-full">

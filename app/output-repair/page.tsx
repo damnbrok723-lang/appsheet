@@ -385,7 +385,7 @@ export default function OutputRepairPage() {
             </div>
           </div>
           <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#e63d3d]">{Number(metrics.totalGr).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</p>
-          <p className="mt-3 text-[11px] text-[#c24f4f]">Total tonase pipa GR</p>
+          <p className="mt-3 text-[11px] text-[#c24f4f]"></p>
         </Card>
 
         <Card className="h-full rounded-[18px] border-[2px] border-[#5ea4ee] bg-[#dbeaf9] p-4 shadow-none">
@@ -396,7 +396,7 @@ export default function OutputRepairPage() {
             </div>
           </div>
           <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#2d7ddd]">{Number(metrics.totalGi).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="mt-3 text-[11px] text-[#2c6db3]">Total tonase pipa GI</p>
+          <p className="mt-3 text-[11px] text-[#2c6db3]"></p>
         </Card>
 
         <Card className="h-full rounded-[18px] border-[2px] border-[#d79d60] bg-[#e9d3bb] p-4 shadow-none">
@@ -407,7 +407,7 @@ export default function OutputRepairPage() {
             </div>
           </div>
           <p className="mt-6 text-[30px] font-black leading-none tracking-tight text-[#d78d2b]">{metrics.grVsGiRate}%</p>
-          <p className="mt-3 text-[11px] text-[#b97b21]">Formula: (GR / GI) × 100%</p>
+          <p className="mt-3 text-[11px] text-[#b97b21]"></p>
         </Card>
       </div>
 
@@ -418,8 +418,7 @@ export default function OutputRepairPage() {
             <CardHeader className="border-b border-red-100 pb-2 pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold tracking-tight text-slate-800">1. Grafik Output Qty (pcs)</h2>
-                  <p className="text-xs text-slate-500">Perbandingan GR Qty pcs vs GI Qty pcs &amp; Persentase (%)</p>
+                  <h2 className="text-base font-bold tracking-tight text-slate-800">1. Output Repair (pcs)</h2>
                 </div>
                 <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
                   Satuan: Pcs
@@ -460,8 +459,7 @@ export default function OutputRepairPage() {
             <CardHeader className="border-b border-blue-100 pb-2 pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold tracking-tight text-slate-800">2. Grafik Output Tonase (kg)</h2>
-                  <p className="text-xs text-slate-500">Perbandingan GR Base unit kg vs GI Base unit kg &amp; Persentase (%)</p>
+                  <h2 className="text-base font-bold tracking-tight text-slate-800">2. Output Repair (Kg)</h2>
                 </div>
                 <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                   Satuan: Kg
