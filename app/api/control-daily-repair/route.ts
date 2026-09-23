@@ -249,7 +249,7 @@ export async function POST(request: Request) {
         const giBaseUnit = hasGIBaseField ? giBaseUnitRaw : isGR ? 0 : isGI ? tonnage : tonnage * 0.95;
 
         return {
-          sourceKey: stableKey(["REPAIR", row.order, row.materialdoc, row.batch, row.mvt, row.postdate, row.sloc]),
+          sourceKey: stableKey(["REPAIR", row.order, row.materialdoc, row.batch, row.mvt, row.postdate, row.sloc, row.labelid || index]),
           reportDate: parseDateValue(row.postdate || row.docdate),
           customer: textValue(row.name) || "Customer Umum",
           dimensions: `${textValue(row.diamm || "-")} x ${textValue(row.tebal || "-")} x ${textValue(row.panjang || "-")}`,
