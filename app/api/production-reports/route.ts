@@ -65,7 +65,9 @@ function warehouseValue(value: unknown) {
 
 function parseDateValue(value: unknown): Date {
   if (!value) return new Date();
-  if (value instanceof Date && !isNaN(value.getTime())) return value;
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+  }
   if (typeof value === "number") {
     // Excel serial date code
     const date = new Date((value - 25569) * 86400 * 1000);

@@ -36,7 +36,9 @@ function numberValue(value: unknown) {
 }
 
 function parseDateValue(value: unknown) {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+  }
   if (typeof value === "number") {
     const date = new Date((value - 25569) * 86400 * 1000);
     if (!Number.isNaN(date.getTime())) return date;
