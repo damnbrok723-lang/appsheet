@@ -228,10 +228,10 @@ export async function POST(request: Request) {
         const qtyPcs = Math.max(0, Math.round(numberValue(row.qtypcs)));
         const tonnage = Math.max(0, numberValue(row.tonasekg));
 
-        const grQtyPcsRaw = Math.abs(numberValue(row.grqtypcs || row.grqty));
-        const giQtyPcsRaw = Math.abs(numberValue(row.giqtypcs || row.giqty));
-        const grBaseUnitRaw = Math.abs(numberValue(row.grbaseunit || row.grtonase || row.grkg));
-        const giBaseUnitRaw = Math.abs(numberValue(row.gibaseunit || row.gitonase || row.gikg));
+        const grQtyPcsRaw = numberValue(row.grqtypcs || row.grqty);
+        const giQtyPcsRaw = numberValue(row.giqtypcs || row.giqty);
+        const grBaseUnitRaw = numberValue(row.grbaseunit || row.grtonase || row.grkg);
+        const giBaseUnitRaw = numberValue(row.gibaseunit || row.gitonase || row.gikg);
         const mvt = textValue(row.mvt).toUpperCase();
         const isGI = mvt.includes("GI") || ["102", "261", "562", "502", "201"].includes(mvt);
         const isGR = mvt.includes("GR") || ["101", "262", "561", "501", "309"].includes(mvt);
