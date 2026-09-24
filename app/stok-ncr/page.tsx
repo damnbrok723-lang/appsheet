@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import ExcelJS from "exceljs";
 import { useCardPermission } from "@/lib/card-permissions";
 import { SAP_DATA_UPDATED_EVENT, notifySapDataUpdated } from "@/lib/sap-sync";
@@ -73,7 +73,7 @@ export default function StokNcrPage() {
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [stockChartType, setStockChartType] = useState("ALL");
+  const [stLtFilter, setStLtFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; customer: string; ncr: string; batch: string } | null>(null);
@@ -167,6 +167,12 @@ export default function StokNcrPage() {
       if (filterFrom && date < filterFrom) return false;
       if (filterTo && date > filterTo) return false;
 
+      if (stLtFilter !== "ALL") {
+        const type = (r.stockType ?? "").toUpperCase();
+        if (stLtFilter === "ST" && type !== "ST" && type !== "STOK") return false;
+        if (stLtFilter === "LT" && type !== "LT") return false;
+      }
+
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
         const matchCustomer = r.customer.toLowerCase().includes(query);
@@ -177,7 +183,7 @@ export default function StokNcrPage() {
       }
       return true;
     });
-  }, [ncrReports, filterFrom, filterTo, searchTerm]);
+  }, [ncrReports, filterFrom, filterTo, stLtFilter, searchTerm]);
 
   // Total statistik NCR
   const stats = useMemo(() => {
@@ -199,43 +205,97 @@ export default function StokNcrPage() {
     };
   }, [filteredReports]);
 
-  // Chart data NCR per Customer
-  const customerChartData = useMemo(() => {
+  // Label custom renderer untuk Pie Chart
+  const renderPieLabel = (props: any) => {
+    const { cx, cy, midAngle, outerRadius, value, name, fill } = props;
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 24;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    const formattedVal = Number(value).toLocaleString("id-ID", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+    });
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill={fill || "#334155"}
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        className="text-[11px] font-bold"
+      >
+        <tspan x={x} dy="-0.6em">{name}</tspan>
+        <tspan x={x} dy="1.2em">{formattedVal}</tspan>
+      </text>
+    );
+  };
+
+  // Pie Chart 1: Tonase Stok Grade C (Distribusi Grade: Grd C vs Prime)
+  const gradePieChartData = useMemo(() => {
     const map: Record<string, number> = {};
     for (const r of filteredReports) {
-      map[r.customer] = (map[r.customer] ?? 0) + r.qtyNg;
+      let grade = r.stockGrade?.trim() || "";
+      if (!grade) {
+        grade = "Grd C";
+      } else if (grade.toLowerCase().includes("prime")) {
+        grade = "Prime";
+      } else if (grade.toLowerCase().includes("c") || grade.toLowerCase().includes("grd")) {
+        grade = "Grd C";
+      }
+      const tonnage = Number(r.tonnageKg ?? (r.qtyNg * 0.05));
+      if (tonnage > 0) {
+        map[grade] = (map[grade] ?? 0) + tonnage;
+      }
     }
-    return Object.entries(map)
-      .map(([customer, count]) => ({ customer, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
+
+    const colorMap: Record<string, string> = {
+      "Grd C": "#06b6d4",
+      "Prime": "#ea580c",
+    };
+    const fallbackColors = ["#eab308", "#64748b", "#3b82f6", "#10b981", "#8b5cf6"];
+    let fallbackIdx = 0;
+
+    return Object.entries(map).map(([name, value]) => ({
+      name,
+      value: Number(value.toFixed(3)),
+      color: colorMap[name] || fallbackColors[fallbackIdx++ % fallbackColors.length],
+    }));
   }, [filteredReports]);
 
-  // Chart data NCR per Date
-  const dateChartData = useMemo(() => {
-    const map: Record<string, { rawDate: string; date: string; ng: number }> = {};
+  // Pie Chart 2: Tonase Stok Grade C per Gudang (Distribusi per Gudang)
+  const warehousePieChartData = useMemo(() => {
+    const map: Record<string, number> = {};
     for (const r of filteredReports) {
-      const rawDate = r.reportDate.slice(0, 10);
-      const date = new Date(r.reportDate).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
-      const current = map[rawDate] ?? { rawDate, date, ng: 0 };
-      current.ng += r.qtyNg;
-      map[rawDate] = current;
+      const wh = r.warehouse || "Tanpa Gudang";
+      const tonnage = Number(r.tonnageKg ?? (r.qtyNg * 0.05));
+      if (tonnage > 0) {
+        map[wh] = (map[wh] ?? 0) + tonnage;
+      }
     }
-    return Object.values(map).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
-  }, [filteredReports]);
 
-  const stockWarehouseChartData = useMemo(() => {
-    const map: Record<string, { warehouse: string; gradeC: number; st: number }> = {};
-    for (const report of filteredReports.filter((report) => stockChartType === "ALL" || (report.stockType ?? "").toUpperCase() === stockChartType)) {
-      const warehouse = report.warehouse || "Tanpa Gudang";
-      const current = map[warehouse] ?? { warehouse, gradeC: 0, st: 0 };
-      const tonnageKg = report.tonnageKg ?? 0;
-      if ((report.stockGrade ?? "").toLowerCase().includes("c")) current.gradeC += tonnageKg;
-      if ((report.stockType ?? "").toLowerCase() === "st") current.st += tonnageKg;
-      map[warehouse] = current;
-    }
-    return Object.values(map).sort((a, b) => a.warehouse.localeCompare(b.warehouse, undefined, { numeric: true }));
-  }, [filteredReports, stockChartType]);
+    const colorPalette = [
+      "#ea580c", // Gd.05 / Orange
+      "#64748b", // Gd.01 / Slate
+      "#94a3b8", // Gd.13 / Silver-Gray
+      "#eab308", // Gd.14 / Yellow-Gold
+      "#06b6d4", // Cyan
+      "#3b82f6", // Blue
+      "#10b981", // Emerald
+      "#8b5cf6", // Purple
+      "#ec4899", // Pink
+    ];
+
+    return Object.entries(map)
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .map(([name, value], index) => ({
+        name,
+        value: Number(value.toFixed(3)),
+        color: colorPalette[index % colorPalette.length],
+      }));
+  }, [filteredReports]);
 
   const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
   const paginatedReports = useMemo(() => {
@@ -402,97 +462,120 @@ export default function StokNcrPage() {
           )}
         </div>
 
-        {/* GRAFIK DISTRIBUSI NCR */}
+        {/* GRAFIK PIE DISTRIBUSI STOK NCR / GRADE C */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <h2 className="text-base font-semibold">Tren Qty NG / NCR per Tanggal</h2>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 w-full">
-                {dateChartData.length ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dateChartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="ng" name="Qty NG (Pcs)" fill="#e11d48" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data NCR</div>
-                )}
+          {/* Pie Chart 1: Tonase Stok Grade C */}
+          <Card className="border border-slate-200 bg-white shadow-xs">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-3 pt-4">
+              <div>
+                <h2 className="text-base font-bold tracking-tight text-slate-800">
+                  Tonase Stok {stLtFilter === "ALL" ? "" : `${stLtFilter} `}Grade C
+                </h2>
+                <p className="text-xs text-slate-500">Proporsi Tonase berdasarkan Grade</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h2 className="text-base font-semibold">Top Customer dengan Qty NG Terbanyak</h2>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 w-full">
-                {customerChartData.length ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={customerChartData} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                      <XAxis type="number" allowDecimals={false} />
-                      <YAxis
-                        dataKey="customer"
-                        type="category"
-                        width={140}
-                        interval={0}
-                        tick={{ fontSize: 10, fill: "currentColor" }}
-                        tickFormatter={(val: string) => (val.length > 18 ? `${val.slice(0, 16)}…` : val)}
-                      />
-                      <Tooltip formatter={(value) => [`${(Number(value) || 0).toLocaleString("id-ID")} Pcs`, "Qty NG"]} />
-                      <Bar dataKey="count" name="Qty NG (Pcs)" fill="#be123c" radius={[0, 4, 4, 0]} barSize={18} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data NCR</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-base font-semibold">Tonase Stok Grade C dan ST per Gudang</h2>
               <select
-                value={stockChartType}
-                onChange={(event) => setStockChartType(event.target.value)}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
-                aria-label="Filter grafik stok berdasarkan ST atau LT"
+                value={stLtFilter}
+                onChange={(e) => setStLtFilter(e.target.value)}
+                className="h-8 rounded-md border bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="ALL">Semua ST/LT</option>
                 <option value="ST">ST</option>
                 <option value="LT">LT</option>
               </select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 w-full">
-              {stockWarehouseChartData.length ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stockWarehouseChartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="warehouse" />
-                    <YAxis tickFormatter={(value) => Number(value).toLocaleString("id-ID")} />
-                    <Tooltip formatter={(value) => [`${Number(value).toLocaleString("id-ID", { maximumFractionDigits: 2 })} Kg`, "Tonase"]} />
-                    <Bar dataKey="gradeC" name="Stok Grade C" fill="#e11d48" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="st" name="Stok ST" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Belum ada data tonase stok</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="h-80 w-full">
+                {gradePieChartData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
+                      <Tooltip
+                        formatter={(val, name) => [
+                          `${Number(val).toLocaleString("id-ID", { maximumFractionDigits: 3 })} Kg`,
+                          name,
+                        ]}
+                      />
+                      <Pie
+                        data={gradePieChartData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={95}
+                        dataKey="value"
+                        nameKey="name"
+                        label={renderPieLabel}
+                        labelLine={{ strokeWidth: 1.5 }}
+                      >
+                        {gradePieChartData.map((entry, index) => (
+                          <Cell key={`cell-grade-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    Belum ada data tonase stok Grade C
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pie Chart 2: Tonase Stok Grade C per Gudang */}
+          <Card className="border border-slate-200 bg-white shadow-xs">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-3 pt-4">
+              <div>
+                <h2 className="text-base font-bold tracking-tight text-slate-800">
+                  Tonase Stok {stLtFilter === "ALL" ? "" : `${stLtFilter} `}Grade C per Gudang
+                </h2>
+                <p className="text-xs text-slate-500">Proporsi Tonase berdasarkan Gudang</p>
+              </div>
+              <select
+                value={stLtFilter}
+                onChange={(e) => setStLtFilter(e.target.value)}
+                className="h-8 rounded-md border bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">Semua ST/LT</option>
+                <option value="ST">ST</option>
+                <option value="LT">LT</option>
+              </select>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="h-80 w-full">
+                {warehousePieChartData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
+                      <Tooltip
+                        formatter={(val, name) => [
+                          `${Number(val).toLocaleString("id-ID", { maximumFractionDigits: 3 })} Kg`,
+                          name,
+                        ]}
+                      />
+                      <Pie
+                        data={warehousePieChartData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={95}
+                        dataKey="value"
+                        nameKey="name"
+                        label={renderPieLabel}
+                        labelLine={{ strokeWidth: 1.5 }}
+                      >
+                        {warehousePieChartData.map((entry, index) => (
+                          <Cell key={`cell-wh-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    Belum ada data tonase stok per gudang
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* DAFTAR STOK NCR & TABEL DATA */}
         <Card>
@@ -507,7 +590,7 @@ export default function StokNcrPage() {
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                {/* Search: full-width on mobile */}
+                {/* Search */}
                 <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -518,6 +601,17 @@ export default function StokNcrPage() {
                     className="h-8 w-full pl-8 text-xs sm:w-44"
                   />
                 </div>
+
+                {/* Filter ST/LT */}
+                <select
+                  value={stLtFilter}
+                  onChange={(e) => setStLtFilter(e.target.value)}
+                  className="h-8 rounded-md border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary sm:w-auto"
+                >
+                  <option value="ALL">Semua ST/LT</option>
+                  <option value="ST">ST</option>
+                  <option value="LT">LT</option>
+                </select>
                 {/* Date filters */}
                 <div className="flex flex-wrap items-center gap-1 text-xs">
                   <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-8 min-w-0 max-w-[8.5rem] flex-1 text-xs" />
